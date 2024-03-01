@@ -5,40 +5,51 @@
 # Perform and return operation
 # Print result
 
-print('Welcome to Calculator!')
+def prompt(message):
+    print(f'==> {message}')
+
+def invalid_number(number_str):
+    try:
+        float(number_str)
+    except ValueError:
+        return True
+    
+    return False
 
 def get_number(num_call):
-    while True:
-        try:
-            num = float(input(f'What is the {num_call} number? '))
-            return num
-        except ValueError:
-            print("That's not a number!")
+    prompt(f"What's the {num_call} number?")
+    number = input()
+
+    while invalid_number(number):
+       prompt("Hmm... that doesn't look like a valid number.")
+       number = input()
+    
+    return number
 
 def get_operation():
-    valid_input = [1, 2, 3, 4]
-    while True:
-        try:
-            operation = int(input(
-                'What operation would you like to perform? \n'
-                'Type 1 to add, 2 to subtract, 3 to multiply, 4 to divide \n'
-            ))
-            if operation in valid_input: 
-                return operation
-            else:
-                print('Invalid input! Choose between numbers 1 - 4')
-        except ValueError:
-            print('Invalid input! Choose between numbers 1 - 4')
+    prompt("What operation would you like to perform\n"
+           'Type 1 to add, 2 to subtract, 3 to multiply, 4 to divide \n'
+           )
+    operation = input()
+
+    while operation not in ['1', '2', '3', '4']:
+        prompt('You must choose 1, 2, 3, or 4')
+        operation = input()
+    
+    return operation
 
 def perform_operation(num1, num2, operation):
-    if operation == 1:
-        return num1 + num2
-    elif operation == 2:
-        return num1 - num2
-    elif operation == 3:
-        return num1 * num2
-    elif operation == 4:
-        return num1 / num2
+    match operation:
+        case '1':
+            output = float(num1) + float(num2)
+        case '2':
+            output = float(num1) - float(num2)
+        case '3':
+            output = float(num1) * float(num2)
+        case '4':
+            output = float(num1) / float(num2)
+    
+    return output
 
 def calculate(num1, num2, operation):
     while True:
@@ -46,12 +57,13 @@ def calculate(num1, num2, operation):
         num2 = get_number('second')
         operation = get_operation()
         result = perform_operation(num1, num2, operation)
-        print(f'The result is {result}!')
+        prompt(f'The result is {result}!')
 
+prompt('Welcome to Calculator!')
 num1 = get_number('first')
 num2 = get_number('second')
 operation = get_operation()
-print(perform_operation(num1, num2, operation))
+prompt(perform_operation(num1, num2, operation))
 
 
 
