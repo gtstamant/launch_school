@@ -45,18 +45,10 @@ def perform_operation(num1, num2, operation):
             output = float(num1) * float(num2)
         case '4':
             output = float(num1) / float(num2)
-    return output
-
-def calculate(num1, num2, operation):
-    while True:
-        num1 = get_number('first')
-        num2 = get_number('second')
-        operation = get_operation()
-        result = perform_operation(num1, num2, operation)
-        prompt(f'The result is {result}!')
+    prompt(f'The result is {output}')
 
 prompt('Welcome to Calculator!')
 number_1 = get_number('first')
 number_2 = get_number('second')
 chosen_operation = get_operation()
-prompt(perform_operation(number_1, number_2, chosen_operation))
+perform_operation(number_1, number_2, chosen_operation)
