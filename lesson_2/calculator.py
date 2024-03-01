@@ -25,8 +25,8 @@ def get_number(num_call):
     return number
 
 def get_operation():
-    prompt("What operation would you like to perform\n"
-           'Type 1 to add, 2 to subtract, 3 to multiply, 4 to divide \n'
+    prompt("""What operation would you like to perform\n
+           'Type 1 to add, 2 to subtract, 3 to multiply, 4 to divide \n"""
            )
     operation = input()
 
