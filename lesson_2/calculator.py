@@ -33,11 +33,11 @@ def get_operation():
 def perform_operation(num1, num2, operation):
     if operation == 1:
         return num1 + num2
-    if operation == 2:
+    elif operation == 2:
         return num1 - num2
-    if operation == 3:
+    elif operation == 3:
         return num1 * num2
-    if operation == 4:
+    elif operation == 4:
         return num1 / num2
     
 num1 = get_number('first')
