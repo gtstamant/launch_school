@@ -39,7 +39,15 @@ def perform_operation(num1, num2, operation):
         return num1 * num2
     elif operation == 4:
         return num1 / num2
-    
+
+def calculate(num1, num2, operation):
+    while True:
+        num1 = get_number('first')
+        num2 = get_number('second')
+        operation = get_operation()
+        result = perform_operation(num1, num2, operation)
+        print(f'The result is {result}!')
+
 num1 = get_number('first')
 num2 = get_number('second')
 operation = get_operation()
