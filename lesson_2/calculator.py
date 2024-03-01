@@ -13,7 +13,6 @@ def invalid_number(number_str):
         float(number_str)
     except ValueError:
         return True
-    
     return False
 
 def get_number(num_call):
@@ -21,9 +20,8 @@ def get_number(num_call):
     number = input()
 
     while invalid_number(number):
-       prompt("Hmm... that doesn't look like a valid number.")
-       number = input()
-    
+        prompt("Hmm... that doesn't look like a valid number.")
+        number = input()
     return number
 
 def get_operation():
@@ -35,7 +33,6 @@ def get_operation():
     while operation not in ['1', '2', '3', '4']:
         prompt('You must choose 1, 2, 3, or 4')
         operation = input()
-    
     return operation
 
 def perform_operation(num1, num2, operation):
@@ -48,7 +45,6 @@ def perform_operation(num1, num2, operation):
             output = float(num1) * float(num2)
         case '4':
             output = float(num1) / float(num2)
-    
     return output
 
 def calculate(num1, num2, operation):
@@ -60,12 +56,7 @@ def calculate(num1, num2, operation):
         prompt(f'The result is {result}!')
 
 prompt('Welcome to Calculator!')
-num1 = get_number('first')
-num2 = get_number('second')
-operation = get_operation()
-prompt(perform_operation(num1, num2, operation))
-
-
-
-
-
+number_1 = get_number('first')
+number_2 = get_number('second')
+chosen_operation = get_operation()
+prompt(perform_operation(number_1, number_2, chosen_operation))
