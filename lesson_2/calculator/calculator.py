@@ -18,7 +18,6 @@ def invalid_number(number_str):
 def get_number(num_call):
     prompt(f"What's the {num_call} number?")
     number = input()
-
     while invalid_number(number):
         prompt("Hmm... that doesn't look like a valid number.")
         number = input()
@@ -28,7 +27,6 @@ def get_operation():
     prompt("""What operation would you like to perform
 'Type 1 to add, 2 to subtract, 3 to multiply, 4 to divide""")
     operation = input()
-
     while operation not in ['1', '2', '3', '4']:
         prompt('You must choose 1, 2, 3, or 4')
         operation = input()
@@ -63,7 +61,7 @@ def run_calculator():
         prompt('Would you like to perform another operation? y/n.')
         continue_op = get_user_choice()
         if continue_op == 'n':
-            prompt('Thanks for calculating! See you later.')
+            prompt('Thanks for calculating! See you later.\n')
             break
 
 run_calculator()
