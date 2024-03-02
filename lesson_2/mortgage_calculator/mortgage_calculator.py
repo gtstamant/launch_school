@@ -11,11 +11,11 @@ def prompt(message):
     print_val = messages(message)
     print(print_val)
 
-def invalid_input(amount):
+def invalid_input(num):
     try:
-        amount = float(amount)
-        if amount <= 0:
-            raise ValueError
+        num = float(num)
+        if num <= 0:
+            raise ValueError(f"Value must be > 0: {num}")
     except ValueError:
         return True
     return False
