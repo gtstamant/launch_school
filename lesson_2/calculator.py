@@ -34,6 +34,13 @@ def get_operation():
         operation = input()
     return operation
 
+def get_user_choice():
+    user_choice = input()
+    while user_choice not in ['y', 'Y', 'n', 'N']:
+        print("Sorry, that's not a valid input!")
+        user_choice = input()
+    return user_choice
+
 def perform_operation(num1, num2, operation):
     match operation:
         case '1':
@@ -44,10 +51,19 @@ def perform_operation(num1, num2, operation):
             output = float(num1) * float(num2)
         case '4':
             output = float(num1) / float(num2)
-    prompt(f'The result is {output}')
+    prompt(f'The result is: {output}.\n')
 
-prompt('Welcome to Calculator!')
-number_1 = get_number('first')
-number_2 = get_number('second')
-chosen_operation = get_operation()
-perform_operation(number_1, number_2, chosen_operation)
+def run_calculator():
+    prompt('Welcome to Calculator!\n')
+    while True:
+        number_1 = get_number('first')
+        number_2 = get_number('second')
+        chosen_operation = get_operation()
+        perform_operation(number_1, number_2, chosen_operation)
+        prompt('Would you like to perform another operation? y/n.')
+        continue_op = get_user_choice()
+        if continue_op == 'n':
+            prompt('Thanks for calculating! See you later.')
+            break
+
+run_calculator()
