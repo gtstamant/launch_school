@@ -3,13 +3,13 @@ import json
 with open('messages.json', 'r') as file:
     message_data = json.load(file)
 
-lang = 'en'
+LANGUAGE = 'zh'
 
 def messages(message, lang='en', data=message_data):
     return data[lang][message]
 
 def prompt(message):
-    message = messages(message, lang)
+    message = messages(message, LANGUAGE)
     print(f'==> {message}')
 
 def invalid_number(number_str):
