@@ -3,7 +3,7 @@ import json
 with open('messages.json', 'r') as file:
     message_data = json.load(file)
 
-LANGUAGE = 'zh'
+LANGUAGE = 'en'
 
 def messages(message, lang='en', data=message_data):
     return data[lang][message]
