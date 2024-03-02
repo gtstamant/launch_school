@@ -1,0 +1,25 @@
+{
+    "en": {
+        "WELCOME" : "Welcome to Calculator!",
+        "GET_NUMBER" : "Provide a number",
+        "GET_OPERATION" : "What operation would you like to perform?\n Press 1 to add, 2 to subtract, 3 to multiply, and 4 to divide!",
+        "OPERATION_ERROR" : "You must choose 1, 2, 3, or 4.",
+        "NUMBER_ERROR" : "Hmm...that doesn't look like a valid number.",
+        "USER_CHOICE_ERROR" : "Sorry, that's not a valid input!",
+        "RESULT" : "The result is: ",
+        "REPEAT" : "Would you like to perform another operation? y/n",
+        "GOODBYE" : "Thanks for calculating! See you later.\n"
+    },
+    "zh": {
+        "WELCOME" : "歡迎計算器",
+        "GET_NUMBER" : "請提供數字",
+        "GET_OPERATION" : "請提供您想要施行的運算\n 1 為 +, 2 為 -, 3 為 *, 4 為 /",
+        "OPERATION_ERROR" : "您需要選擇 1, 2, 3, 或 4.",
+        "NUMBER_ERROR" : "這不行! 請提供端正的數字",
+        "USER_CHOICE_ERROR" : "不好意思! 這輸入不行",
+        "REPEAT" : "您是否需要在用算器嗎? y/n",
+        "RESULT" : "數算成果是 ",
+        "GOODBYE" : "謝您的使用! 下次再見.\n"
+
+    }
+}
