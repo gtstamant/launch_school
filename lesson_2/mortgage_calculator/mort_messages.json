@@ -6,7 +6,7 @@
     "APR"           : "What is the annual percentage interest? Please input as a percent!",
     "INVAL_PERC"    : "Hmmm...please input a valid, positive percentage!",
     "DURATION"      : "What is the loan duration in years?",
-    "DATA"          : "Your monthly payment is ${monthly_payment:.2f} for every month over {duration:.2f} months.\nYou will pay ${interest_payment:.2f} in total interest.",
+    "DATA"          : "Your monthly payment is ${monthly_payment:.2f} each month for {duration:.2f} months.\nYou will pay ${interest_payment:.2f} in total interest.",
     "DECISION"      : "Would you like to assess another loan? Enter [y]/[n]",
     "INVAL_CHOICE"  : "Not a valid choice!",
     "GOODBYE"       : "Goodbye!"

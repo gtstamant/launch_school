@@ -11,11 +11,11 @@ def prompt(message):
     print_val = messages(message)
     print(print_val)
 
-def invalid_input(num):
+def check_input(num):
     try:
         num = float(num)
         if num <= 0:
-            raise ValueError(f"Value must be > 0: {num}")
+            raise ValueError
     except ValueError:
         return True
     return False
@@ -23,7 +23,7 @@ def invalid_input(num):
 def collect_datum(data_type):
     prompt(data_type)
     datum = input().replace('%', '')
-    while invalid_input(datum):
+    while check_input(datum):
         if data_type == 'APR':
             prompt('INVAL_PERC')
         else:
@@ -32,36 +32,11 @@ def collect_datum(data_type):
     return datum
 
 def collect_loan_data(data_list):
-    loan_data = []
+    loan_data = {}
     for data_type in data_list:
         datum = float(collect_datum(data_type))
-        loan_data.append(datum)
+        loan_data[data_type] = datum
     return loan_data
-
-# def collect_loan_data():
-#     prompt("PRINCIPAL")  
-#     principal = input()
-#     while invalid_input(principal):
-#         prompt("INVAL_NUM")
-#         principal = input()
-    
-#     prompt("APR")
-#     annual_interest = input().replace('%', '')
-#     while invalid_input(annual_interest):
-#         prompt("INVAL_PERC")
-#         annual_interest = input().replace('%', '')
-
-#     prompt("DURATION")
-#     loan_time = input()
-#     while invalid_input(loan_time):
-#         prompt("INVAL_NUM")
-#         loan_time = input()
-    
-#     principal = float(principal)
-#     annual_interest = float(annual_interest) / 100
-#     loan_time = float(loan_time)
-
-#     return (principal, annual_interest, loan_time)
 
 def monthly_rate(annual_rate):
     return (annual_rate / 100) / 12
@@ -77,11 +52,28 @@ def loan_payment(amount, interest, duration):
 def total_interest(amount, duration, payments):
     return (duration * payments) - amount
 
-def display_data(duration, monthly_payment, interest_payment):
+def generate_monthly_info(loan_data_dict):
+    monthly_data = {}
+    monthly_data['amount'] = loan_data_dict['PRINCIPAL']
+    monthly_data['month_rate'] = monthly_rate(loan_data_dict['APR'])
+    monthly_data['month_duration'] = monthly_duration(loan_data_dict['DURATION'])
+    monthly_data['month_payment'] = loan_payment(
+        monthly_data['amount'],
+        monthly_data['month_rate'],
+        monthly_data['month_duration'],
+    )
+    monthly_data['tot_interest'] = total_interest(
+        monthly_data['amount'],
+        monthly_data['month_duration'],
+        monthly_data['month_payment'],
+    )
+    return monthly_data
+
+def display_data(monthly_data):
     data = messages('DATA').format(
-        monthly_payment=monthly_payment, 
-        duration=duration, 
-        interest_payment=interest_payment
+        monthly_payment=monthly_data['month_payment'], 
+        duration=monthly_data['month_duration'], 
+        interest_payment=monthly_data['tot_interest']
     )
     print(data)
 
@@ -96,14 +88,9 @@ def run_calculator(starting_conditions):
     prompt('WELCOME')
     while True:
         prompt("START")
-        
-        principal, apr, duration = collect_loan_data(starting_conditions)
-        month_rate = monthly_rate(apr)
-        month_duration = monthly_duration(duration)
-        month_payment = loan_payment(principal, month_rate, month_duration)
-        interest = total_interest(principal, month_duration, month_payment)
-        
-        display_data(month_duration, month_payment, interest)
+        loan_data = collect_loan_data(starting_conditions)
+        monthly_data = generate_monthly_info(loan_data)        
+        display_data(monthly_data)
         prompt('DECISION')
         decision = get_user_choice()
         if decision[0].lower() == 'n':
