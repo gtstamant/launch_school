@@ -56,7 +56,9 @@ def generate_monthly_info(loan_data_dict):
     monthly_data = {}
     monthly_data['amount'] = loan_data_dict['PRINCIPAL']
     monthly_data['month_rate'] = monthly_rate(loan_data_dict['APR'])
-    monthly_data['month_duration'] = monthly_duration(loan_data_dict['DURATION'])
+    monthly_data['month_duration'] = monthly_duration(
+        loan_data_dict['DURATION']
+    )
     monthly_data['month_payment'] = loan_payment(
         monthly_data['amount'],
         monthly_data['month_rate'],
@@ -84,11 +86,11 @@ def get_user_choice():
         user_choice = input()
     return user_choice
 
-def run_calculator(starting_conditions):
+def run_calculator(loan_conditions):
     prompt('WELCOME')
     while True:
         prompt("START")
-        loan_data = collect_loan_data(starting_conditions)
+        loan_data = collect_loan_data(loan_conditions)
         monthly_data = generate_monthly_info(loan_data)        
         display_data(monthly_data)
         prompt('DECISION')
