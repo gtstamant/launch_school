@@ -81,7 +81,7 @@ def display_data(monthly_data):
 
 def get_user_choice():
     user_choice = input()
-    if not user_choice or user_choice[0].lower() not in ['y', 'n']:
+    while not user_choice or user_choice[0].lower() not in ['y', 'n']:
         prompt('INVAL_CHOICE')
         user_choice = input()
     return user_choice
