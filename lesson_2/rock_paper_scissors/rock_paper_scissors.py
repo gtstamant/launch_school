@@ -16,29 +16,29 @@ def get_user_move(valid_moves):
     print(f"Please choose one: {', '.join(valid_moves)}. "
     'You can also type the first letter.\n')
     user_move = input().lower()
-    
+
     while not validate_user_move(user_move, valid_moves):
         print("\nHmm...that's not a valid input. Choose a valid move.\n")
         user_move = input().lower()
-    
+
     return user_move
 
 def validate_user_move(user_move, valid_moves):
     shortened_moves = [word[0] for word in valid_moves]
-    
+
     if user_move in shortened_moves or user_move in valid_moves:
         return True
-    
+
     return False
 
 def convert_user_move(user_move, valid_moves):
     valid_move_conversion = {move[0]: move for move in valid_moves}
-    
+
     if user_move == 's':
         return clarify_s_initial_moves()
     if len(user_move) == 1:
         return valid_move_conversion[user_move]
-    
+
     return user_move
 
 def clarify_s_initial_moves():
@@ -57,7 +57,7 @@ def get_computer_move():
 def determine_tie(player_move, computer_move):
     if player_move == computer_move:
         return True
-    
+
     return False
 
 def check_player_wins(player_move, computer_move):
@@ -72,7 +72,7 @@ def check_player_wins(player_move, computer_move):
             return True
         case 'lizard' if computer_move in ['spock', 'paper']:
             return True
-    
+
     return False
 
 def determine_outcome(player_move, computer_move):
@@ -80,7 +80,7 @@ def determine_outcome(player_move, computer_move):
         return 'tie'
     if check_player_wins(player_move, computer_move):
         return 'win'
-    
+
     return 'loss'
 
 def display_outcome(player_move, computer_move, game_outcome):
@@ -95,7 +95,7 @@ def determine_best_of_five(game_results):
         return True
     if game_results.count('loss') == 3:
         return True
-    
+
     return False
 
 def display_final_score(result_list):
@@ -115,13 +115,13 @@ def get_user_choice():
 
 def get_replay_choice():
     print('Would you like to play again? Please enter [y]/[n]\n')
-    
+
     return get_user_choice()
 
 def decide_game_replay(continue_choice):
     if continue_choice == 'y':
         return True
-    
+
     return False
 
 def get_continue_command():
