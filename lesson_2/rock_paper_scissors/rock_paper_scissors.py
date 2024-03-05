@@ -10,15 +10,46 @@ VALID_MOVES = ['rock',
                ]
 
 with open('rps.json', 'r') as display_data:
-    display_messages = json.load(display_data)
+    messages = json.load(display_data)
 
-def get_user_move():
-    print(f'Please choose one: {", ".join(VALID_MOVES)}.\n')
+def display_message(message, source_dict):
+    return source_dict[message]
+
+def get_user_move(valid_moves):
+    print(display_message('choose_move', messages).format(', '.join(valid_moves)))
+    user_move = input().lower()
+
+    while not validate_user_move(user_move, valid_moves):
+        print(f"\nHmm...that's not a valid input. "
+        f'Please choose one: {", ".join(valid_moves)}.\n')
+        user_move = input().lower()
+
+    return user_move
+
+def validate_user_move(user_move, valid_moves):
+    shortened_moves = [word[0] for word in valid_moves]
+    if user_move in shortened_moves:
+        return True
+    if user_move in valid_moves:
+        return True
+    return False
+
+def convert_user_move(user_move, valid_moves): #don't access random dict
+    valid_move_key = {move[0]: move for move in valid_moves}
+    if user_move == 's':
+        return determine_s_initial_moves()
+    if len(user_move) == 1:
+        return valid_move_key[user_move]
+    return user_move
+
+def determine_s_initial_moves():
+    print(display_message('move_begin_s', messages))
     user_choice = input().lower()
-    while user_choice not in VALID_MOVES:
-        print(f"Oops, that's not a valid move."
-              f"Please choose one: {', '.join(VALID_MOVES)}.\n")
+
+    while user_choice not in ['scissors', 'spock']:
+        print("Please type either scissors or spock.\n")
         user_choice = input().lower()
+
     return user_choice
 
 def get_computer_move():
@@ -58,8 +89,8 @@ def check_best_of_five(game_results):
     return False
 
 def display_outcome(player_move, computer_move, game_outcome):
-    print(f'\nYou chose {player_move} and the computer chose {computer_move}:'
-          f' player {display_messages[game_outcome]}.')
+    print(f'\nYou chose {player_move} and the computer chose {computer_move}. '
+          f'Player {messages[game_outcome]}.')
 
 def display_current_results(result_list):
     print(f'Your current results are: {", ".join(result_list)}.\n')
@@ -72,9 +103,11 @@ def display_final_score(result_list):
 
 def get_user_choice():
     user_choice = input().lower()
+
     while user_choice not in ['y', 'n', 'yes', 'no']:
         print("Sorry, that's not a valid choice. Please enter [y]/[n]\n")
         user_choice = input().lower()
+
     return user_choice[0]
 
 def get_replay_choice():
@@ -86,15 +119,18 @@ def decide_game_replay(continue_choice):
         return True
     return False
 
-def get_continue_decision():  # need to fix
+def get_continue_decision():
     input('Press enter to continue...\n')
 
 def play_game():
-    print("Let's play a round of rock, paper, scissors.\n")
-    player_move = get_user_move()
+    print("Let's play a round of extended rock, paper, scissors.\n")
+
+    player_move = convert_user_move(get_user_move(VALID_MOVES), VALID_MOVES)
     computer_move = get_computer_move()
     outcome = determine_outcome(player_move, computer_move)
+
     display_outcome(player_move, computer_move, outcome)
+
     return outcome
 
 def play_best_of_five():
@@ -114,7 +150,7 @@ def play_best_of_five():
         replay_choice = get_replay_choice()
 
         if not decide_game_replay(replay_choice):
-            print('Thanks for playing. Goodbye!')
+            print('\nThanks for playing. Goodbye!')
             return False
 
 play_best_of_five()
