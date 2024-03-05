@@ -1,7 +1,5 @@
 {
     "win" : "wins",
     "loss" : "loses",
-    "tie" : "ties",
-    "choose_move" : "Please choose one: {}.\n",
-    "move_begin_s" : "\nDo you mean scissors or spock? Please provide the entire word.\n"
+    "tie" : "ties"
 }
