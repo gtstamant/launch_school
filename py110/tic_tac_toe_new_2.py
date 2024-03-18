@@ -153,11 +153,3 @@ while not is_game_over(board):
     except ValueError:
         print("It's a tie!")
         break
-    
-    
-
-    
-    
-    
-
-
