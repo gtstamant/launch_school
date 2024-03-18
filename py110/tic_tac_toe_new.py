@@ -117,19 +117,7 @@ def minimax(game_state):
             best_move.append(compute_move_value(update_game_state(game_state, move, X), player))
     return best_move
 
-    # for move in get_possible_moves(game_state):
-    #     try:
-    #         value = get_max(update_game_state(game_state, move, X))
-    #         if value > best_move[1]:
-    #             best_move[0], best_move[1] = move, value
-    #     except IndexError:
-    #         best_move.append(move)
-    #         best_move.append(get_max(update_game_state(game_state, move, X)))
-    # return best_move
-
-
-
 board = generate_board()
 board = update_game_state(board, (0, 0), X)
 board = update_game_state(board, (0, 1), O)
-print(minimax(board))        
+print(minimax(board))
