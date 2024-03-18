@@ -109,30 +109,55 @@ def minimax(game_state):
     player = which_player(game_state)
     move_values = {}
     possible_moves = get_possible_moves(game_state)
+    if not possible_moves:
+        return None
+    
     if player == 'X':
         for move in possible_moves:
             move_values[move] = get_min_value(update_game_state(game_state, move))
-    
     else:
         for move in possible_moves:
             move_values[move] = get_max_value(update_game_state(game_state, move))
+        
+        return min(move_values, key=move_values.get)
 
-    return move_values
+def is_valid_move(game_state, move):
+    if move in get_possible_moves(game_state):
+        return True
+
+def get_player_move(game_state):
+    
+    def string_tuple_conversion(input_string):
+        move = [int(num) for num in input_string 
+                if num.isdigit() ]
+        return tuple(move)
+        
+    print('Please input your move in the form (X, Y).')
+    player_move = string_tuple_conversion(input())
+    while not is_valid_move(game_state, player_move):
+        print("Sorry, that's not a valid move! Try again.")
+        player_move = input()
+    return player_move
 
 board = generate_board()
-board = update_game_state(board, (0, 0))
-# board = update_game_state(board, (1, 0))
-# board = update_game_state(board, (1, 2))
-# board = update_game_state(board, (1, 1))
-# board = update_game_state(board, (2, 1))
-# board = update_game_state(board, (2, 0))
-# board = update_game_state(board, (2, 2))
 display_board(board)
-# board = update_game_state(board, (2, 1))
-# board = update_game_state(board, (2, 2))
-print(get_min_value(board))
-print(minimax(board))
+
+while not is_game_over(board):
+    player_move = get_player_move(board)
+    board = update_game_state(board, player_move)
+    display_board(board)
+    try:
+        computer_move = minimax(board)
+        board = update_game_state(board, computer_move)
+        display_board(board)
+    except ValueError:
+        print("It's a tie!")
+        break
+    
+    
+
+    
+    
+    
 
 
-
-# display_board(board)
