@@ -1,5 +1,1 @@
-from fractions import Fraction
-
-my_num = Fraction('1/3')
-
-print(my_num)
+print(1 not in [1, 2, 3])
