@@ -1,18 +1,17 @@
 # 1. Start with
 #     - 'num blocks' is equal to input
-#     - 'sum squares' is equal to empty list
-#     - 'layer' equal to 1
+#     - Set 'squares' to empty list
+#     - Set 'layer' equal to 1
 
-# 2. While sum of 'sum squares' is less than 'num blocks'
-#     - Append 'layer' * 'layer' to 'sum squares'
+# 2. While sum of 'squares' is less than 'num blocks'
+#     - Append 'layer' * 'layer' to 'squares'
 #     - Increment 'layer' by plus one
 
-# 3. Return 
-#     - if 'sum squares' = 'num blocks'
+# 3. Check:
+#     - if sum of 'squares' is equal to 'num blocks'
 #         - return 0
-#     - if 'sum squares' does not equal 'num blocks'
-#         - return 'num blocks' - (sum of 'sum squares' excluding the final member)
-
+#     - if sum of 'squares' does not equal 'num blocks'
+#         - return 'num blocks' - (sum of 'squares' excluding the final member)
 
 def calculate_leftover_blocks(num_blocks):
     squares = []
