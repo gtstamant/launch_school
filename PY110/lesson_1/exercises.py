@@ -80,4 +80,18 @@ def palindrome_substrings(string):
     
     return result
 
-print(palindrome_substrings("supercalifragilisticexpialidocious"))
+# print(palindrome_substrings("supercalifragilisticexpialidocious"))
+
+def multiply(numbers, multiplier):
+    multiplied_nums = []
+
+    for number in numbers:
+        multiplied_nums.append(number * multiplier)
+    
+    mult_nums_2 = [number * multiplier
+                   for number in numbers]
+    
+    return multiplied_nums, mult_nums_2
+
+my_numbers = [1, 4, 3, 7, 2, 6]
+print(multiply(my_numbers, 3))  # [3, 12, 9, 21, 6, 18]
