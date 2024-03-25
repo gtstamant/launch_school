@@ -126,19 +126,19 @@ def running_total_3(numbers):
 # print(running_total([3]) == [3])                  # True
 # print(running_total([]) == [])                    # True
 
-# Recursive solution?
+# Recursive solution? Needs more work
 
-def running_total(numbers, run_total):
-    if len(numbers) == 1 or len(numbers) == 0:
-        run_total.append(numbers[0])
-        return run_total
+# def running_total(numbers, run_total):
+#     if len(numbers) == 1 or len(numbers) == 0:
+#         run_total.append(numbers[0])
+#         return run_total
     
-    print(sum(running_total(numbers[:-1], run_total)))
-    run_total.append(sum(running_total(numbers[:-1], run_total)) + numbers[-1])
-    print(run_total)
-    return run_total
+#     print(sum(running_total(numbers[:-1], run_total)))
+#     run_total.append(sum(running_total(numbers[:-1], run_total)) + numbers[-1])
+#     print(running_total)
+#     return run_total
 
-print(running_total([2, 5, 13], []) == [2, 7, 20])    # True
+# print(running_total([2, 5, 13], []) == [2, 7, 20])    # True
 # print(running_total([14, 11, 7, 15, 20])
 #       == [14, 25, 32, 47, 67])                    # True
 # print(running_total([3]) == [3])                  # True
