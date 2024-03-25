@@ -65,6 +65,8 @@ def search_for_sixth():
     else:
         print(f"{sixth_num} isn't in {','.join(five_nums)}.")
 
+# Further exploration
+
 def does_satisfy_condition(condition):
     numbers = get_user_inputs()
     for number in numbers:
@@ -73,7 +75,6 @@ def does_satisfy_condition(condition):
             return True
         print(f'No numbers satisfy the condition.')
         return False
-            
 
 def compare_25(num):
     return num > 25
