@@ -1,5 +1,6 @@
 import copy
 import os
+import random
 
 PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
@@ -131,40 +132,41 @@ def get_game_value(board):
     else:
         return 0
 
-def get_max_value(board):
+def get_max_value(board, depth):
     if is_game_over(board):
-        return get_game_value(board)
+        return (get_game_value(board), depth + 1)
 
-    value = -2
+    value = (-2, -9999999999999999999)
     for move in get_possible_moves(board):
-        value = max(value, get_min_value(update_board(board, move)))
+        value = max(value, get_min_value(update_board(board, move), depth + 1))
     return value
 
-def get_min_value(board):
+def get_min_value(board, depth):
     if is_game_over(board):
-        return get_game_value(board)
+        return (get_game_value(board), depth + 1)
 
-    value = 2
+    value = (2, 9999999999999999999)
     for move in get_possible_moves(board):
-        value = min(value, get_max_value(update_board(board, move)))
+        value = min(value, get_max_value(update_board(board, move), depth + 1))
     return value
 
 def minimax(board):
-    player = which_player(board)
     move_values = {}
     possible_moves = get_possible_moves(board)
     if not possible_moves:
         return None
 
-    if player == PLAYER_MARKER:
-        for move in possible_moves:
-            move_values[move] = get_min_value(update_board(board, move))
-    else:
-        for move in possible_moves:
-            move_values[move] = get_max_value(update_board(board, move))
+    depth_counter = 0 # Track depth to return optimal move with shortest game
+    for move in possible_moves:
+        move_values[move] = get_max_value(update_board(board, move), depth_counter)
 
-    print(move_values)
-    return min(move_values, key=move_values.get)
+    min_move = min(move_values, key=move_values.get)
+    min_move_value = move_values[min_move]
+
+    possible_min_moves = [move for move, value in move_values.items()
+                          if value == min_move_value]
+
+    return random.choice(possible_min_moves) # random among optimal moves
 
 def get_user_choice():
     user_input = input().casefold()
