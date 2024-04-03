@@ -1,8 +1,6 @@
 import copy
 import os
 
-PLAYER_MARKER = 'X'
-COMPUTER_MARKER = 'O'
 BOARD_SPACES = 3
 SPACE_HEIGHT = 3
 BAR_SIZE = 1
@@ -21,10 +19,10 @@ def initialize_board():
 
     return board
 
-def display_board(board):
+def display_board(board, player, computer):
     os.system('clear')
 
-    prompt(f"You are {PLAYER_MARKER}. Computer is {COMPUTER_MARKER}.")
+    prompt(f"You are {player}. Computer is {computer}.")
     for line in range(1, BOARD_HEIGHT + 1):
         # Adding 1 makes calculations intuitive
         if line % (SPACE_HEIGHT + 1) == 0:
@@ -64,14 +62,14 @@ def update_board(board, move):
 
 def which_player(board):
     total_x = sum([1 for square in board.values()
-                   if square == PLAYER_MARKER])
+                   if square == 'X'])
     total_o = sum([1 for square in board.values()
-                   if square == COMPUTER_MARKER])
+                   if square == 'O'])
 
     if total_x > total_o:
-        return COMPUTER_MARKER
+        return 'O'
     else: # Pylint complains, but perhaps more readable?
-        return PLAYER_MARKER
+        return 'X'
 
 def get_possible_moves(board):
     return [move for move in board.keys()
@@ -124,47 +122,62 @@ def is_game_over(board):
 def get_game_value(board):
     winner = is_there_a_winner(board)
 
-    if winner == PLAYER_MARKER:
+    if winner == 'X':
         return 1
-    elif winner == COMPUTER_MARKER:
+    elif winner == 'O':
         return -1
     else:
         return 0
 
-def get_max_value(board):
+def get_max_value(board, alpha, beta):
     if is_game_over(board):
         return get_game_value(board)
 
     value = -2
     for move in get_possible_moves(board):
-        value = max(value, get_min_value(update_board(board, move)))
+        value = max(value, get_min_value(update_board(board, move), alpha, beta))
+        if value > beta:
+            # print('Branch pruned')
+            break
+        alpha = max(alpha, value)
     return value
 
-def get_min_value(board):
+def get_min_value(board, alpha, beta):
     if is_game_over(board):
         return get_game_value(board)
 
     value = 2
     for move in get_possible_moves(board):
-        value = min(value, get_max_value(update_board(board, move)))
+        value = min(value, get_max_value(update_board(board, move), alpha, beta))
+        if value < alpha:
+            # print('Branch pruned')
+            break
+        beta = min(beta, value)
     return value
 
-def minimax(board):
+def minimax(board, alpha=-10, beta=10):
     player = which_player(board)
     move_values = {}
     possible_moves = get_possible_moves(board)
     if not possible_moves:
         return None
 
-    if player == PLAYER_MARKER:
+    if player == 'X':
         for move in possible_moves:
-            move_values[move] = get_min_value(update_board(board, move))
+            move_values[move] = get_min_value(update_board(board, move), alpha, beta)
+            if move_values[move] > 0 or move_values[move] > beta:
+                print('Branch pruned')
+                break
+            alpha = max(alpha, move_values[move])
+        return max(move_values, key=move_values.get) # can I rewrite more elegantly without dictionary? 
     else:
         for move in possible_moves:
-            move_values[move] = get_max_value(update_board(board, move))
-
-    print(move_values)
-    return min(move_values, key=move_values.get)
+            move_values[move] = get_max_value(update_board(board, move), alpha, beta)
+            if move_values[move] < 0 or move_values[move] < alpha:
+                print('Branch pruned')
+                break
+            beta = min(beta, move_values[move])
+        return min(move_values, key=move_values.get)
 
 def get_user_choice():
     user_input = input().casefold()
@@ -216,9 +229,45 @@ def display_win_percentages(win_dict):
     prompt('Press [enter] to continue.')
     input()
 
+def play_move(board, player1, player2):
+    player = which_player(board)
+    match player:
+        case 'X':
+            return player1(board)
+        case 'O':
+           return player2(board)
+
+def choose_player_order():
+    prompt('Would you like to play first? Press [y] to play first, [n] to play second.')
+    if get_user_choice() == 'y':
+        return get_user_move, minimax
+    return minimax, get_user_move
+
+def get_player_names(player1):
+    if player1 == get_user_move:
+        user, computer = 'X', 'O'
+    else:
+        computer, user = 'X', 'O'
+
+    return user, computer
+
+def which_player_won(winner, user, computer):
+    if winner == user:
+        return 'Player'
+    elif winner == computer:
+        return 'Computer'
+    else:
+        return 'Tie'
+
+def display_winner(winner):
+    if winner != 'Tie':
+        print(f'{winner} wins!')
+    else:
+        print("It's a tie!")
+
 def play_tic_tac_toe():
     initial_game = True
-    win_count = {'player': 0, 'computer': 0, 'tie': 0}
+    win_count = {'Player': 0, 'Computer': 0, 'Tie': 0}
 
     if not display_instructions():
         return
@@ -229,28 +278,18 @@ def play_tic_tac_toe():
         if not initial_game:
             display_win_percentages(win_count)
 
+        player1, player2 = choose_player_order()
+        user, computer = get_player_names(player1)
+        initial_game = False
         while not is_game_over(board):
-            initial_game = False
+            display_board(board, user, computer)
+            move = play_move(board, player1, player2)
+            board = update_board(board, move)
 
-            display_board(board)
-            player_move = get_user_move(board)
-            board = update_board(board, player_move)
-            display_board(board)
-
-            computer_move = minimax(board)
-            board = update_board(board, computer_move)
-            display_board(board)
-
-        match is_there_a_winner(board):
-            case 'X':
-                print('Player wins!')
-                win_count['player'] += 1
-            case 'O':
-                print('Computer wins!')
-                win_count['computer'] += 1
-            case  _ :
-                print("It's a tie!")
-                win_count['tie'] += 1
+        display_board(board, user, computer)
+        winner = which_player_won(is_there_a_winner(board), user, computer)
+        display_winner(winner)
+        win_count[winner] += 1
 
         prompt('Play again? [y/n]')
         if get_user_choice() == 'n':
