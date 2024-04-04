@@ -16,6 +16,9 @@ DEALER_MAX = 17
 def prompt(message):
     print(f'==> {message}')
 
+def clear_screen():
+    os.system('clear')
+
 def initialize_deck():
     return [{f'{rank} of {suit}': rank} if isinstance(rank, int)
      else {f'{rank} of {suit}': FACE_VALUES[rank]}
@@ -77,7 +80,7 @@ def get_hand_value(hand):
 def is_bust(hand):
     return get_hand_value(hand) > MAX_HAND
 
-def is_valid_move():
+def is_valid_move(): # Change name as not boolean
     while True:
         user_input = input().casefold() 
         if user_input in VALID_MOVES:
@@ -88,8 +91,8 @@ def get_player_move(): # Need to update this!!!
     prompt('Would you like to hit or stay?')
     return is_valid_move()[0]
 
-def display_hands(player_hand, dealer_hand, final=False): # flag to show whole dealer hand?
-    player_cards = [card for card_info in player_hand
+def display_hands(player_hand, dealer_hand, final=False):
+    player_cards = [card for card_info in player_hand # Extract this logic out
                     for card in card_info.keys()]
     dealer_cards = [card for card_info in dealer_hand
                    for card in card_info.keys()]
@@ -158,14 +161,13 @@ def display_winner(outcome, player_hand, dealer_hand):
     prompt(f'{outcome}! Here are the final hands:\n')
     display_hands(player_hand, dealer_hand, True)
 
-def get_hint(simulation_data):
+def get_hint(simulation_data): # Do I need this one?
     pass
 
 def simulate_player_hand(simulated_deck, simulated_hand, hit_to_num):
     while get_hand_value(simulated_hand) < hit_to_num:
         hit(simulated_deck, simulated_hand)
 
-    # print(simulated_hand)
     return simulated_hand
 
 def play_sim_round(sim_deck, sim_player, sim_dealer, hit_to_num):
@@ -195,14 +197,20 @@ def run_simulation(deck, player_hand, dealer_hand, sim_depth):
     win_ratios = {key: (total_wins / sim_depth)
                   for key, total_wins in sim_results.items()}
 
-    display_sim_results(win_ratios, current_total)
+    display_sim_results(win_ratios, current_total, sim_depth)
 
-def display_sim_results(simulation_results, current_hand):
+def display_sim_results(simulation_results, current_hand, sim_depth): # nest in the above
+    clear_screen()
+    prompt(f'Simulation results: {sim_depth} iterations')
     for key, win_ratio in simulation_results.items():
         if key == current_hand:
-            print(f'Staying at {key} has a {win_ratio * 100:.2f}% success rate.')
+            print(f'Staying at {key} has a {win_ratio * 100:.2f}% win rate.')
         else:
-            print(f'Hitting to {key} has a {win_ratio * 100:.2f}% success rate.')
+            print(f'Hitting to {key} has a {win_ratio * 100:.2f}% win rate.')
+    
+    best_choice = max(simulation_results, key=simulation_results.get)
+    print('\nAt this point in the game, the best strategy is to '
+          f"{'stay' if best_choice == current_hand else 'hit'}.\n")
 
 def play_round(deck, player_hand, dealer_hand):
     player_hand = player_turn(deck, player_hand, dealer_hand)
@@ -213,7 +221,7 @@ def play_round(deck, player_hand, dealer_hand):
 
 def play_twenty_one():
     os.system('clear')
-    prompt('Welcome to Twenty One!\n')
+    prompt('Welcome to Twenty One!\n') # Extract out the prompts
     while True:
         deck = initialize_deck()
         prompt("Cards are dealt! Press [enter] to play.")
