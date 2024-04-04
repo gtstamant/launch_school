@@ -46,7 +46,7 @@ def display_board(board, player, computer):
 
     prompt(f"You are {player}. Computer is {computer}.")
     for line in range(1, BOARD_HEIGHT + 1):
-        # Adding 1 makes calculations intuitive
+        # Adding 1 makes calculations inuitive
         if line % (SPACE_HEIGHT + 1) == 0:
             print('-----+-----+-----')
         # Pylint complains, but I think keeping on one line aids readability
@@ -65,7 +65,7 @@ def display_example_board():
     prompt("Moves are indicated by their x, y coordinates:")
 
     for line in range(1, BOARD_HEIGHT + 1):
-        # Adding 1 makes calculations inutitive
+        # Adding 1 makes calculations inuitive
         if line % (SPACE_HEIGHT + 1) == 0:
             print('-----+------+-----')
         elif line == INPUT_LINE_1:
