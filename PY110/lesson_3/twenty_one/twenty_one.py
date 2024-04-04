@@ -165,9 +165,6 @@ def display_winner(outcome, player_hand, dealer_hand):
     prompt(f'{outcome}! Here are the final hands:\n')
     display_hands(player_hand, dealer_hand, True)
 
-def get_hint(simulation_data): # Do I need this one?
-    pass
-
 def simulate_player_hand(simulated_deck, simulated_hand, hit_to_num):
     while get_hand_value(simulated_hand) < hit_to_num:
         hit(simulated_deck, simulated_hand)
@@ -181,8 +178,9 @@ def play_sim_round(sim_deck, sim_player, sim_dealer, hit_to_num):
 
     return sim_outcome
 
-def run_simulation(deck, player_hand, dealer_hand, sim_depth):
+def run_simulation(deck, player_hand, dealer_hand, sim_depth): # maybe build a big function with several nested for simulation
     sim_results = {}
+    tie_results = {}
     current_total = get_hand_value(player_hand)
 
     for hit_to_num in range(current_total, 21):
@@ -195,26 +193,56 @@ def run_simulation(deck, player_hand, dealer_hand, sim_depth):
             random.shuffle(sim_deck)
             sim_outcome = play_sim_round(sim_deck, sim_player, sim_dealer, hit_to_num)
 
-            if sim_outcome[0] == 'P':
+            if sim_outcome[0] == 'P': # Tie issue! Maybe a dictionary with win & tie?
                 sim_results[hit_to_num] = sim_results.get(hit_to_num, 0) + 1
+            elif sim_outcome[0] == 'I': # added
+                tie_results[hit_to_num] = tie_results.get(hit_to_num, 0) + 1 # added
     
     win_ratios = {key: (total_wins / sim_depth)
                   for key, total_wins in sim_results.items()}
 
-    display_sim_results(win_ratios, current_total, sim_depth)
+    tie_ratios = {key: (total_ties / sim_depth) # added
+                  for key, total_ties in tie_results.items()}
 
-def display_sim_results(simulation_results, current_hand, sim_depth): # nest in the above
+    display_sim_results(win_ratios, tie_ratios, current_total, sim_depth)
+    print(get_optimal_strategy(win_ratios, tie_ratios, current_total))
+
+def get_optimal_strategy(win_ratios, tie_ratios, current_hand):
+    try:
+        win_hit = (sum([value for key, value in win_ratios.items()
+                    if key != current_hand]) / (len(win_ratios) - 1)) * 100
+    except ZeroDivisionError:
+        win_hit = 0
+    try:
+        tie_hit = (sum([value for key, value in tie_ratios.items()
+                   if key != current_hand]) / (len(win_ratios) - 1)) * 100
+    except ZeroDivisionError:
+        tie_hit = 0
+    
+    win_stay = win_ratios.get(current_hand, 0) * 100
+    tie_stay = tie_ratios.get(current_hand, 0) * 100
+
+    return (f'If you hit, you have an average {win_hit:.2f}% chance to win ' 
+            f'and a {tie_hit:.2f}% chance to tie.\n'
+            f'If you stay, you have an average {win_stay:.2f}% chance to win ' 
+            f'and a {tie_stay:.2f}% chance to tie.\n')
+    
+def display_sim_results(simulation_results, tie_ratios, current_hand, sim_depth): # nest in the above
     clear_screen()
     prompt(f'Simulation results with {sim_depth} iterations')
     for key, win_ratio in simulation_results.items():
         if key == current_hand:
-            print(f'Staying at {key} has a {win_ratio * 100:.2f}% win rate.')
+            print_string = [f'Staying at {key} has a {win_ratio * 100:.2f}% win rate ', 
+                            f'and a {tie_ratios[key] * 100:.2f}% tie rate' if tie_ratios.get(key)
+                  else '']
+            print(''.join(print_string))
+
         else:
-            print(f'Hitting to {key} has a {win_ratio * 100:.2f}% win rate.')
-    
-    best_choice = max(simulation_results, key=simulation_results.get)
-    print('\nAt this point in the game, the optimal strategy is to '
-          f"{'stay' if best_choice == current_hand else 'hit'}.\n")
+            print_string = [f'Hitting to {key} has a {win_ratio * 100:.2f}% win rate ',
+                  f'and a {tie_ratios[key] * 100:.2f}% tie rate' if tie_ratios.get(key)
+                  else '']
+            print(''.join(print_string))
+    print('')
 
 def prompt_user_decision():
     while True:
@@ -239,7 +267,7 @@ def is_valid_sim_depth(depth):
     return depth.isdigit() and (99 < int(depth) < 10001)
 
 def prompt_hint(deck, player_hand, dealer_hand):
-    prompt('Need a hint? Do you want to run a simulation? [y/n]\n')
+    prompt('Need a hint? Do you want to run a simulation? [y/n]')
 
     decision = prompt_user_decision()
     if decision == 'y':
@@ -248,7 +276,7 @@ def prompt_hint(deck, player_hand, dealer_hand):
         sim_depth = prompt_sim_depth()            
         run_simulation(deck, player_hand, dealer_hand, sim_depth)
 
-        input('To return to the game, press [enter]')
+        input('To return to the game, press [enter]\n')
         clear_screen()
         prompt('As a reminder, here are your cards:\n')
         display_hands(player_hand, dealer_hand)
