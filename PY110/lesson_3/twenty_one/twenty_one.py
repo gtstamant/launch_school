@@ -41,8 +41,8 @@ def deal_hands(deck):
     dealer_hand = []
     
     shuffled_deck = random.sample(deck, k=len(deck))
-    for card in range(INITIAL_HAND_SIZE * 2):
-        if card % 2 == 0:
+    for card_num in range(INITIAL_HAND_SIZE * 2):
+        if card_num % 2 == 0:
             player_hand.append(shuffled_deck.pop())
         else:
             dealer_hand.append(shuffled_deck.pop())
@@ -55,7 +55,7 @@ def hit(deck, hand):
 def is_ace(card):
     return re.search('ace', card, flags=re.I)
 
-def divide_hand(hand):
+def split_hand(hand):
     hand_ex_aces, aces = [], []
     for card_info in hand:
         for card in card_info.keys():
@@ -66,25 +66,43 @@ def divide_hand(hand):
 
     return hand_ex_aces, aces
 
-def get_hand_value(hand):
-        
-    hand_ex_aces, aces = divide_hand(hand)
+def get_card_representation(hand):
+    return [card for card_info in hand for card in card_info.keys()]
+
+# def get_ace_values(aces, ace_values, value_ex_aces): ### Refactor didn't work
+#     for ace_info in aces:
+#         for ace, value in ace_info.items():
+#             if value_ex_aces + ace_values > MAX_HAND:
+#                 ace_info[ace] = LOW_ACE_VALUE
+#                 ace_values   -= HIGH_ACE_VALUE - LOW_ACE_VALUE
+    
+#     return ace_values
+
+def get_hand_value(hand): # refactor
+    hand_ex_aces, aces = split_hand(hand)
     value_ex_aces      = sum(value for card_info in hand_ex_aces
                             for value in card_info.values())
     ace_values         = sum(value for card_info in aces
                             for value in card_info.values())
-
-    while aces and value_ex_aces + ace_values > MAX_HAND:
+    # updated_ace_values = get_ace_values(aces, ace_values, value_ex_aces)
+    
+    while aces and (value_ex_aces + ace_values > MAX_HAND): # if aces
         for ace_info in aces:
             for ace, value in ace_info.items():
-                if value == HIGH_ACE_VALUE:
-                    ace_info[ace] = LOW_ACE_VALUE
-                    ace_values -= (HIGH_ACE_VALUE - LOW_ACE_VALUE)
-        
+                if value_ex_aces + ace_values > MAX_HAND: # extract lines 79 - 82 to func
+                    if value == HIGH_ACE_VALUE:
+                        ace_info[ace] = LOW_ACE_VALUE
+                        ace_values -= (HIGH_ACE_VALUE - LOW_ACE_VALUE)
+
         if HIGH_ACE_VALUE not in ace_info.values():
             break
 
-    return value_ex_aces + ace_values
+    return value_ex_aces + ace_values #updated_ace_values
+
+# print(f"No aces ==> {get_hand_value([{'10 of Clubs': 10}, {'8 of Clubs': 8}])}")
+# print(f"One aces ==> {get_hand_value([{'Ace of Hearts': 11}, {'10 of Clubs': 10}])}")
+# print(f"Two aces ==> {get_hand_value([{'Ace of Hearts': 11}, {'Ace of Clubs': 11}])}")
+# print(f"Two aces ==> {get_hand_value([{'Ace of Hearts': 11}, {'Ace of Clubs': 11}, {'10 of Clubs': 10}])}")
 
 def is_bust(hand):
     return get_hand_value(hand) > MAX_HAND
@@ -130,13 +148,13 @@ def prompt_bet(current_cash, turn_bets, player_hand, dealer_hand):
     clear_screen()
     arrow_print('Here are the hands:\n')
     display_hands(player_hand, dealer_hand)
+    available_money = sum(current_cash) - sum(turn_bets)
+
     if not turn_bets:
         arrow_print("How much would you like to bet? " 
         f"You've currently got ${sum(current_cash)} dollars.")
     else:
-        arrow_print("Do you want to up your bet? ") 
-        print(f"You've already bet ${sum(turn_bets)} "
-        f"leaving you with ${sum(current_cash) - sum(turn_bets)} to play with.")
+        arrow_print(f"You've already bet ${sum(turn_bets)} (Available: ${available_money}). Want to raise? [y/n]") 
 
     while True:
         bet = input().lstrip('$')
@@ -146,7 +164,7 @@ def prompt_bet(current_cash, turn_bets, player_hand, dealer_hand):
             return int(bet)
         clear_screen()
         print("That's not a valid bet! Try again.") 
-        print(f"Input a positive dollar amount lower than ${sum(current_cash) - sum(turn_bets)}.")
+        print(f"Input a positive dollar amount lower than ${available_money}.")
 
 def is_valid_bet(bet, current_cash):
     return bet.isdigit() and 0 < int(bet) <= current_cash
@@ -219,7 +237,7 @@ def display_winner(outcome, player_hand, dealer_hand):
     display_hands(player_hand, dealer_hand, True)
 
 def prompt_hint(deck, player_hand, dealer_hand):
-    arrow_print('Need a hint? Shall I run a simulation to determine the optimal strategy? [y/n]')
+    arrow_print('Need a hint? Enter [y] to simulate the optimal strategy and [n] to continue.')
 
     decision = prompt_user_decision()
     if decision == 'y':
@@ -234,8 +252,9 @@ def prompt_hint(deck, player_hand, dealer_hand):
         display_hands(player_hand, dealer_hand)
 
 def prompt_play_again(current_cash):
-    arrow_print("Would you like to continue playing, [y,n]? "
-                f"You've got ${current_cash} to play with.")
+    arrow_print(f"Current cash: ${current_cash}. "
+                "Would you like to continue playing? Enter [y/n]")
+    
     return prompt_user_decision()
 
 def prompt_cash_input(): # maybe change this type to "set"
@@ -243,26 +262,31 @@ def prompt_cash_input(): # maybe change this type to "set"
     print('Enter a dollar amount between $1 and $500:')
     while True:
         initial_cash = input().lstrip('$')
-        if is_valid_cash(initial_cash):
+        if is_valid_cash_pile(initial_cash):
             return int(initial_cash)
         clear_screen()
         print("That's not a valid cash amount. Enter a positive integer between $1 and $500:")
 
-def is_valid_cash(cash):
+def is_valid_cash_pile(cash):
     return cash.isdigit() and 501 > int(cash) > 0
 
-def play_round(deck, player_hand, dealer_hand, cash):
-    player_hand, turn_bets = player_turn(deck, player_hand, dealer_hand, cash)
-    dealer_hand = dealer_turn(deck, dealer_hand, player_hand)
-    outcome = get_outcome(player_hand, dealer_hand)
-
+def update_bets(outcome, turn_bets):
     match outcome.split()[0]:
         case 'Dealer':
             turn_bets = [-bet for bet in turn_bets]
         case "It's": # Haven't verified this
             turn_bets.clear()
     
-    return outcome, player_hand, dealer_hand, turn_bets
+    return turn_bets
+
+def play_round(deck, player_hand, dealer_hand, cash):
+    player_hand, turn_bets = player_turn(deck, player_hand, dealer_hand, cash)
+    dealer_hand = dealer_turn(deck, dealer_hand, player_hand)
+    outcome = get_outcome(player_hand, dealer_hand)
+
+    updated_bets = update_bets(outcome, turn_bets)
+    
+    return outcome, player_hand, dealer_hand, updated_bets
 
 def play_multiple_rounds():
     total_cash = [prompt_cash_input()]
@@ -309,31 +333,57 @@ def prompt_sim_depth():
         print('\nSorry, you need to input an integer between 1000 and 10,000.')
 
 def is_valid_sim_depth(depth):
-    return depth.isdigit() and (1 < int(depth) < 10001) # modified for testing
+    return depth.isdigit() and (999 < int(depth) < 10001) # modified for testing
 
 def simulate_player_hand(simulated_deck, simulated_hand):
 
     def is_ace_in_hand(hand):
-        ace = False
+        ace_found = False
         for card_info in hand:
             for card in card_info:
                 if is_ace(card):
-                    ace = True
-            return ace    
+                    ace_found = True
+            return ace_found   
+
+    def randomized_outcome(hand):
+        return (simulate_player_hits(hand) if random.choice[0, 1]
+                else hand, 0)
+
+    def simulate_player_hits(hand):
+        hits = 0
+        while not is_bust(hand):
+            if is_ace_in_hand(hand) and get_hand_value(hand) > 16:
+                return randomized_outcome(hand), hits
+            
+            hit(simulated_deck, simulated_hand)
+            hits += 1
+        
+        hand.pop()
+
+        return hand, hits - 1
     
-    hits = 0 # ace problem
-    original_hand = copy.deepcopy(simulated_hand)
-    while not is_bust(simulated_hand):
-        hit(simulated_deck, simulated_hand)
-        hits += 1
+    return simulate_player_hits(simulated_hand)
 
-    modified_hand = simulated_hand[:-1]
-    if is_ace_in_hand(original_hand) and get_hand_value(original_hand) > 16:
-        if not random.choice([0, 1]):
-            modified_hand = original_hand
-            hits = 1
+    # hits = 0
+    # hand_pre_hits = copy.deepcopy(simulated_hand)
 
-    return modified_hand, hits - 1 # changed simulated hand > modified hand
+    # if is_ace_in_hand(hand_pre_hits) and get_hand_value(hand_pre_hits) > 16:
+    #     return randomized_outcome(hand_pre_hits)
+
+
+
+    # while not is_bust(simulated_hand):
+    #     hit(simulated_deck, simulated_hand)
+    #     hits += 1
+
+    # modified_hand = simulated_hand[:-1]
+
+    # if is_ace_in_hand(hand_pre_hits) and get_hand_value(hand_pre_hits) > 16:
+    #     if not random.choice([0, 1]):
+    #         modified_hand = hand_pre_hits
+    #         hits = 1
+
+    # return modified_hand, hits - 1 # changed simulated hand > modified hand
 
 def play_sim_round(sim_deck, sim_player, sim_dealer):
     sim_player_hand, hits = simulate_player_hand(sim_deck, sim_player)
@@ -342,7 +392,7 @@ def play_sim_round(sim_deck, sim_player, sim_dealer):
 
     return sim_outcome, hits
 
-def randomize_hidden_card(deck, dealer_hand):
+def randomize_hidden_card(deck, dealer_hand): # need to fix for subsequent turns
     deck_copy   = copy.deepcopy(deck)
     dealer_copy = copy.deepcopy(dealer_hand)
 
@@ -354,7 +404,7 @@ def randomize_hidden_card(deck, dealer_hand):
     sim_deck.remove(new_hidden_card)
     sim_dealer = dealer_copy + [new_hidden_card]
 
-    return sim_deck, sim_dealer # need to check this is returning randomized hand for dealer
+    return sim_deck, sim_dealer
 
 def run_simulation(deck, player_hand, dealer_hand): # maybe build a big function with several nested for simulation
     win_results = {}
@@ -397,17 +447,17 @@ def display_sim_results(ordered_results, tie_ratios, sim_depth): # removed win r
                   else '']
             print(''.join(print_string))
 
-        else:
-            print_string = [f'Hitting {key} card has a {win_ratio * 100:.1f}% win rate ',
+        else: # need to remove 'card' below
+            print_string = [f'Hitting {key} has a {win_ratio * 100:.1f}% win rate ',
                   f'and a {tie_ratios[key] * 100:.1f}% tie rate' if tie_ratios.get(key)
                   else '']
             print(''.join(print_string))
     print('')
     print(f'The optimal strategy is to {get_optimal_strategy(ordered_results)}\n')
 
-def get_optimal_strategy(ordered_results):
+def get_optimal_strategy(ordered_results): # working but logic potentially wrong
     total_hit_win_percentage = sum([hit_num[1] * 100 for hit_num in ordered_results
-                                if hit_num[0] != 0])
+                                if hit_num[0] != 0]) # is this logic right
     try:
         stay_win_percentage      = [hit_num[1] * 100 for hit_num in ordered_results 
                                    if hit_num[0] == 0][0]
