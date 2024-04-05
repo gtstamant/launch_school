@@ -14,11 +14,21 @@ LOW_ACE_VALUE = 1
 MAX_HAND = 21
 DEALER_MAX = 17
 
-def prompt(message): # Better name? print_w_arrow
+def arrow_print(message): # Better name? print_w_arrow
     print(f'==> {message}')
 
 def clear_screen():
     os.system('clear')
+
+def prompt_user_decision():
+    while True:
+        decision = input().casefold()
+        if is_valid_decision(decision):
+            return decision[0]
+        print('Sorry, please input [y/n]!')
+
+def is_valid_decision(user_input):
+    return user_input in USER_DECISION
 
 def initialize_deck():
     return [{f'{rank} of {suit}': rank} if isinstance(rank, int)
@@ -42,7 +52,7 @@ def deal_hands(deck):
 def hit(deck, hand):
     hand.append(deck.pop())
 
-def split_hand(hand): # get_aces_and_remainder; nested function w/below
+def divide_hand(hand):
     hand_ex_aces, aces = [], []
     for card_info in hand:
         for card in card_info.keys():
@@ -54,7 +64,8 @@ def split_hand(hand): # get_aces_and_remainder; nested function w/below
     return hand_ex_aces, aces
 
 def get_hand_value(hand):
-    hand_ex_aces, aces = split_hand(hand)
+        
+    hand_ex_aces, aces = divide_hand(hand)
     value_ex_aces      = sum(value for card_info in hand_ex_aces
                             for value in card_info.values())
     ace_values         = sum(value for card_info in aces
@@ -80,66 +91,105 @@ def is_valid_move(user_move): # Change name as not boolean
 
 def prompt_player_move(): # Need to update this!!!
     while True:
-        prompt('Would you like to hit or stay?')
+        arrow_print('Would you like to hit or stay? Enter [h/s]')
         user_input = input().casefold()
         
         if is_valid_move(user_input):
             return user_input[0]
-        prompt("Sorry, that's not a valid move! Try again:")
+        arrow_print("Sorry, that's not a valid move! Try again:")
 
 def display_hands(player_hand, dealer_hand, final=False):
-    player_cards = [card for card_info in player_hand # Extract this logic out into nested function
-                    for card in card_info.keys()]
-    dealer_cards = [card for card_info in dealer_hand
-                   for card in card_info.keys()]
+    
+    def get_card_representation(): ## Need to put in the current values
+        player_cards = [card for card_info in player_hand # Extract this logic out into nested function
+                       for card in card_info.keys()]
+        dealer_cards = [card for card_info in dealer_hand
+                       for card in card_info.keys()]
+        
+        return player_cards, dealer_cards
+    
+    player_cards, dealer_cards = get_card_representation()
+
     print(f"Your hand:   {', '.join(player_cards[:-1])}" 
-            f"{',' if len(player_cards) > 2 else ''} and {player_cards[-1]} ")
+            f"{',' if len(player_cards) > 2 else ''} and {player_cards[-1]}. "
+            f"Total hand value: {get_hand_value(player_hand)}")
     
     if not final:
         print(f"Dealer hand: {', '.join(dealer_cards[1:])}"
                f"{',' if len(dealer_cards) > 2 else ''} and ? of ?")
     else:
         print(f"Dealer hand: {', '.join(dealer_cards[:-1])}"
-               f"{',' if len(dealer_cards) > 2 else ''} and {dealer_cards[-1]}")
+               f"{',' if len(dealer_cards) > 2 else ''} and {dealer_cards[-1]}. "
+               f"Dealer hand value: {get_hand_value(dealer_hand)}")
     print('')
 
-def player_turn(deck, player_hand, dealer_hand):
+def prompt_bet(current_cash, turn_bets, player_hand, dealer_hand):
     clear_screen()
-    while get_hand_value(player_hand) != MAX_HAND:
+    arrow_print('Here are the hands:\n')
+    display_hands(player_hand, dealer_hand)
+    if not turn_bets:
+        arrow_print("How much would you like to bet? " 
+        f"You've currently got ${sum(current_cash)} dollars.")
+    else:
+        arrow_print("Do you want to up your bet? ") 
+        print(f"You've already bet ${sum(turn_bets)} "
+        f"leaving you with ${sum(current_cash) - sum(turn_bets)} to play with.")
+
+    while True:
+        bet = input().lstrip('$')
+        if bet in ['n', 'no', 0]:
+            return 0
+        if is_valid_bet(bet, (sum(current_cash) - sum(turn_bets))):
+            return int(bet)
+        clear_screen()
+        print("That's not a valid bet! Try again.") 
+        print(f"Input a positive dollar amount lower than ${sum(current_cash) - sum(turn_bets)}.")
+
+def is_valid_bet(bet, current_cash):
+    return bet.isdigit() and 0 < int(bet) <= current_cash
+
+def player_turn(deck, player_hand, dealer_hand, current_cash):
+    clear_screen()
+    turn_bets = []
+
+    while True:
         if is_bust(player_hand):
             break
-        
+
         display_hands(player_hand, dealer_hand)
         prompt_hint(deck, player_hand, dealer_hand)
-        # sim_depth = int(input('Need a hint? Set your desired simulation depth: '))
-        # if sim_depth: # need to fix, made easy for testing
-        #     run_simulation(deck, player_hand, dealer_hand, sim_depth)
-        #     input('To return to the game, press [enter]')
 
+        bet = prompt_bet(current_cash, turn_bets, player_hand, dealer_hand)
+        turn_bets.append(bet)
+        
         clear_screen()
-        prompt('As a reminder, here are your cards:\n')
+        if get_hand_value(player_hand) == MAX_HAND: ### This is a problem, while True: ?
+            print("You've got 21!")
+            break
+
+        arrow_print(f"You've bet ${sum(turn_bets)} so far. Here are the hands:\n")
         display_hands(player_hand, dealer_hand)
 
         if prompt_player_move() == 'h':
-            os.system('clear')
-            prompt("You've chosen to hit! Good luck.\n")
+            clear_screen()
+            arrow_print("You've chosen to hit! Here is your new hand:\n")
             hit(deck, player_hand)
         else:
-            os.system('clear')
-            prompt("You've chosen to stay! Dealer's move.")
-            prompt('Press [enter] to continue')
-            input()
-            return player_hand
-    return player_hand
+            clear_screen()
+            arrow_print("You've chosen to stay! Dealer's move.\n")
+            print('Press [enter] to continue')
+            input() # leave this here
+            return player_hand, turn_bets
+    
+    return player_hand, turn_bets
 
 def dealer_turn(deck, dealer_hand, player_hand):
     
     def dealer_hits(deck, hand):
         while get_hand_value(hand) < DEALER_MAX:
             hit(deck, hand)
-
         return hand
-    
+
     if not is_bust(player_hand):
         dealer_hand = dealer_hits(deck, dealer_hand)
 
@@ -161,157 +211,193 @@ def get_outcome(player_hand, dealer_hand):
     return "It's a tie"
 
 def display_winner(outcome, player_hand, dealer_hand):
-    os.system('clear')
-    prompt(f'{outcome}! Here are the final hands:\n')
+    clear_screen()
+    arrow_print(f'{outcome}! Here are the final hands:\n')
     display_hands(player_hand, dealer_hand, True)
 
-def simulate_player_hand(simulated_deck, simulated_hand, hit_to_num):
-    while get_hand_value(simulated_hand) < hit_to_num:
-        hit(simulated_deck, simulated_hand)
-
-    return simulated_hand
-
-def play_sim_round(sim_deck, sim_player, sim_dealer, hit_to_num):
-    sim_player_hand = simulate_player_hand(sim_deck, sim_player, hit_to_num)
-    sim_dealer_hand = dealer_turn(sim_deck, sim_dealer, sim_player)
-    sim_outcome = get_outcome(sim_player_hand, sim_dealer_hand)
-
-    return sim_outcome
-
-def run_simulation(deck, player_hand, dealer_hand, sim_depth): # maybe build a big function with several nested for simulation
-    sim_results = {}
-    tie_results = {}
-    current_total = get_hand_value(player_hand)
-
-    for hit_to_num in range(current_total, 21):
-        for _ in range(sim_depth):
-            
-            sim_deck   = copy.deepcopy(deck)
-            sim_player = copy.deepcopy(player_hand)
-            sim_dealer = copy.deepcopy(dealer_hand)
-            
-            random.shuffle(sim_deck)
-            sim_outcome = play_sim_round(sim_deck, sim_player, sim_dealer, hit_to_num)
-
-            if sim_outcome[0] == 'P': # Tie issue! Maybe a dictionary with win & tie?
-                sim_results[hit_to_num] = sim_results.get(hit_to_num, 0) + 1
-            elif sim_outcome[0] == 'I': # added
-                tie_results[hit_to_num] = tie_results.get(hit_to_num, 0) + 1 # added
-    
-    win_ratios = {key: (total_wins / sim_depth)
-                  for key, total_wins in sim_results.items()}
-
-    tie_ratios = {key: (total_ties / sim_depth) # added
-                  for key, total_ties in tie_results.items()}
-
-    display_sim_results(win_ratios, tie_ratios, current_total, sim_depth)
-    print(get_optimal_strategy(win_ratios, tie_ratios, current_total))
-
-def get_optimal_strategy(win_ratios, tie_ratios, current_hand):
-    try:
-        win_hit = (sum([value for key, value in win_ratios.items()
-                    if key != current_hand]) / (len(win_ratios) - 1)) * 100
-    except ZeroDivisionError:
-        win_hit = 0
-    try:
-        tie_hit = (sum([value for key, value in tie_ratios.items()
-                   if key != current_hand]) / (len(win_ratios) - 1)) * 100
-    except ZeroDivisionError:
-        tie_hit = 0
-    
-    win_stay = win_ratios.get(current_hand, 0) * 100
-    tie_stay = tie_ratios.get(current_hand, 0) * 100
-
-    return (f'If you hit, you have an average {win_hit:.2f}% chance to win ' 
-            f'and a {tie_hit:.2f}% chance to tie.\n'
-            f'If you stay, you have an average {win_stay:.2f}% chance to win ' 
-            f'and a {tie_stay:.2f}% chance to tie.\n')
-    
-def display_sim_results(simulation_results, tie_ratios, current_hand, sim_depth): # nest in the above
-    clear_screen()
-    prompt(f'Simulation results with {sim_depth} iterations')
-    for key, win_ratio in simulation_results.items():
-        if key == current_hand:
-            print_string = [f'Staying at {key} has a {win_ratio * 100:.2f}% win rate ', 
-                            f'and a {tie_ratios[key] * 100:.2f}% tie rate' if tie_ratios.get(key)
-                  else '']
-            print(''.join(print_string))
-
-        else:
-            print_string = [f'Hitting to {key} has a {win_ratio * 100:.2f}% win rate ',
-                  f'and a {tie_ratios[key] * 100:.2f}% tie rate' if tie_ratios.get(key)
-                  else '']
-            print(''.join(print_string))
-    print('')
-
-def prompt_user_decision():
-    while True:
-        decision = input().casefold()
-        if is_valid_decision(decision):
-            return decision[0]
-        print('Sorry, please input [y/n]!')
-
-def is_valid_decision(user_input):
-    return user_input in USER_DECISION
-
-def prompt_sim_depth():
-    print('How many iterations would you like to simulate?\n'
-          'Please choose an number between 100 and 10,001.')
-    while True:
-        sim_depth = input()
-        if is_valid_sim_depth(sim_depth):
-            return int(sim_depth)
-        print('\nSorry, you need to input an integer between 100 and 10,000.')
-
-def is_valid_sim_depth(depth):
-    return depth.isdigit() and (99 < int(depth) < 10001)
-
 def prompt_hint(deck, player_hand, dealer_hand):
-    prompt('Need a hint? Do you want to run a simulation? [y/n]')
+    arrow_print('Need a hint? Shall I run a simulation to determine the optimal strategy? [y/n]')
 
     decision = prompt_user_decision()
     if decision == 'y':
 
-        clear_screen()
-        sim_depth = prompt_sim_depth()            
-        run_simulation(deck, player_hand, dealer_hand, sim_depth)
+        clear_screen()        
+        run_simulation(deck, player_hand, dealer_hand)
 
-        input('To return to the game, press [enter]\n')
+        arrow_print('To continue playing, press [enter]:')
+        input()
         clear_screen()
-        prompt('As a reminder, here are your cards:\n')
+        arrow_print('As a reminder, here are the hands:\n')
         display_hands(player_hand, dealer_hand)
 
-def play_round(deck, player_hand, dealer_hand):
-    player_hand = player_turn(deck, player_hand, dealer_hand)
-    dealer_hand = dealer_turn(deck, dealer_hand, player_hand)
-    outcome = get_outcome(player_hand, dealer_hand)
-    
-    return outcome, player_hand, dealer_hand
-
-def prompt_play_again():
-    prompt('Would you like to play again?')
+def prompt_play_again(current_cash):
+    arrow_print("Would you like to continue playing, [y,n]? "
+                f"You've got ${current_cash} to play with.")
     return prompt_user_decision()
 
-def play_multiple_rounds():
+def prompt_cash_input(): # maybe change this type to "set"
+    print('Please set your initial cash pile.')
+    print('Enter a dollar amount between $1 and $500:')
     while True:
+        initial_cash = input().lstrip('$')
+        if is_valid_cash(initial_cash):
+            return int(initial_cash)
+        clear_screen()
+        print("That's not a valid cash amount. Enter a positive integer between $1 and $500:")
+
+def is_valid_cash(cash):
+    return cash.isdigit() and 501 > int(cash) > 0
+
+def play_round(deck, player_hand, dealer_hand, cash):
+    player_hand, turn_bets = player_turn(deck, player_hand, dealer_hand, cash)
+    dealer_hand = dealer_turn(deck, dealer_hand, player_hand)
+    outcome = get_outcome(player_hand, dealer_hand)
+
+    match outcome.split()[0]:
+        case 'Dealer':
+            turn_bets = [-bet for bet in turn_bets]
+        case "It's": # Haven't verified this
+            turn_bets.clear()
+    
+    return outcome, player_hand, dealer_hand, turn_bets
+
+def play_multiple_rounds():
+    total_cash = [prompt_cash_input()]
+    while sum(total_cash) > 0:
+        clear_screen()
         deck = initialize_deck()
-        prompt("Cards are dealt! Press [enter] to play.")
+        arrow_print(f"You've got ${sum(total_cash)} dollars. Press [enter] to deal cards.")
         input()
 
         deck, player_hand, dealer_hand = deal_hands(deck)
-        outcome, player_hand, dealer_hand = play_round(deck, player_hand, dealer_hand)
+        outcome, player_hand, dealer_hand, turn_bets = play_round(deck, player_hand, dealer_hand, total_cash)
         display_winner(outcome, player_hand, dealer_hand)
+
+        total_cash.extend(turn_bets)
         
-        if prompt_play_again() == 'n':
-            prompt('Thanks for playing!')
+        if prompt_play_again(sum(total_cash)) == 'n':
             break
         
+    if sum(total_cash) == 0:
+        print("Looks like you're all out of money!")
+    else:
         clear_screen()
+        arrow_print("Sorry to see you go! You're leaving with "
+              f'{sum(total_cash)} dollars.\n')
+    print('Press [enter] to exit the game')
+    input()
+    clear_screen()
 
 def play_twenty_one():
     clear_screen()
-    prompt('Welcome to Twenty One!\n') # Extract out the prompts
+    arrow_print('Welcome to Twenty One!\n') # Extract out the prompts
+    
     play_multiple_rounds() # Display final outcome?
+    
+    arrow_print('Thanks for playing!\n')
+
+def prompt_sim_depth():
+    arrow_print('How many games should I simulate?\n')
+    print('Please choose an number between 1000 and 10000.')
+    while True:
+        sim_depth = input()
+        if is_valid_sim_depth(sim_depth):
+            return int(sim_depth)
+        print('\nSorry, you need to input an integer between 1000 and 10,000.')
+
+def is_valid_sim_depth(depth):
+    return depth.isdigit() and (1 < int(depth) < 10001) # modified for testing
+
+def simulate_player_hand(simulated_deck, simulated_hand):
+    hits = 0
+    while not is_bust(simulated_hand):
+        hit(simulated_deck, simulated_hand)
+        hits += 1
+
+    simulated_hand.pop()
+
+    return simulated_hand, hits - 1
+
+def play_sim_round(sim_deck, sim_player, sim_dealer):
+    sim_player_hand, hits = simulate_player_hand(sim_deck, sim_player)
+    sim_dealer_hand = dealer_turn(sim_deck, sim_dealer, sim_player)
+    sim_outcome = get_outcome(sim_player_hand, sim_dealer_hand)
+
+    return sim_outcome, hits
+
+def randomize_hidden_card(deck, dealer_hand):
+    deck_copy   = copy.deepcopy(deck)
+    dealer_copy = copy.deepcopy(dealer_hand)
+
+    hidden_card = dealer_copy.pop(0)
+    deck_copy.append(hidden_card)
+    sim_deck = random.sample(deck_copy, k=len(deck_copy))
+
+    new_hidden_card = random.sample(sim_deck, k=1)[0]
+    sim_deck.remove(new_hidden_card)
+    sim_dealer = dealer_copy + [new_hidden_card]
+
+    return sim_deck, sim_dealer
+
+def run_simulation(deck, player_hand, dealer_hand): # maybe build a big function with several nested for simulation
+    win_results = {}
+    tie_results = {}
+    current_total = get_hand_value(player_hand)
+
+    if current_total == 21:
+        clear_screen()
+        print("You already have 21! You don't need a simulation.")
+        return
+
+    else:
+        sim_depth = prompt_sim_depth()    
+        for _ in range(sim_depth):
+            sim_deck, sim_dealer = randomize_hidden_card(deck, dealer_hand)
+            sim_player = copy.deepcopy(player_hand)
+            sim_outcome, hits = play_sim_round(sim_deck, sim_player, sim_dealer)
+            
+            if sim_outcome[0] == 'P':
+                    win_results[hits] = win_results.get(hits, 0) + 1
+            elif sim_outcome[0] == 'I':
+                tie_results[hits] = tie_results.get(hits, 0) + 1
+
+    win_ratios = {key: (total_wins / sim_depth)
+                     for key, total_wins in win_results.items()}
+
+    tie_ratios = {key: (total_ties / sim_depth) # added
+                     for key, total_ties in tie_results.items()}
+
+    ordered_results = sorted(list(win_ratios.items()), key=lambda ratios: ratios[1], reverse=True)
+    display_sim_results(ordered_results, tie_ratios, sim_depth) #removed win_ratio param
+
+def display_sim_results(ordered_results, tie_ratios, sim_depth): # removed win ratio param
+    clear_screen()
+    arrow_print(f'Simulated results for {sim_depth} games:')
+    for key, win_ratio in ordered_results:
+        if key == 0:
+            print_string = [f'Staying at {key} has a {win_ratio * 100:.1f}% win rate ', 
+                            f'and a {tie_ratios[key] * 100:.1f}% tie rate' if tie_ratios.get(key)
+                  else '']
+            print(''.join(print_string))
+
+        else:
+            print_string = [f'Hitting to {key} has a {win_ratio * 100:.1f}% win rate ',
+                  f'and a {tie_ratios[key] * 100:.1f}% tie rate' if tie_ratios.get(key)
+                  else '']
+            print(''.join(print_string))
+    print('')
+    print(f'The optimal strategy is to {get_optimal_strategy(ordered_results)}\n')
+
+def get_optimal_strategy(ordered_results):
+    total_hit_win_percentage = sum([hit_num[1] * 100 for hit_num in ordered_results
+                                if hit_num[0] != 0])
+    try:
+        stay_win_percentage      = [hit_num[1] * 100 for hit_num in ordered_results 
+                                   if hit_num[0] == 0][0]
+    except IndexError:
+        stay_win_percentage      = 0
+
+    return 'hit' if total_hit_win_percentage > stay_win_percentage else 'stay'
 
 
 play_twenty_one()
