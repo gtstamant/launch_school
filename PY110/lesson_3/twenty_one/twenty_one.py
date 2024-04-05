@@ -52,11 +52,14 @@ def deal_hands(deck):
 def hit(deck, hand):
     hand.append(deck.pop())
 
+def is_ace(card):
+    return re.search('ace', card, flags=re.I)
+
 def divide_hand(hand):
     hand_ex_aces, aces = [], []
     for card_info in hand:
         for card in card_info.keys():
-            if re.search('ace', card, flags=re.I):
+            if is_ace(card):
                 aces.append(card_info)
             else:
                 hand_ex_aces.append(card_info)
@@ -309,19 +312,33 @@ def is_valid_sim_depth(depth):
     return depth.isdigit() and (1 < int(depth) < 10001) # modified for testing
 
 def simulate_player_hand(simulated_deck, simulated_hand):
-    hits = 0
+
+    def is_ace_in_hand(hand):
+        ace = False
+        for card_info in hand:
+            for card in card_info:
+                if is_ace(card):
+                    ace = True
+            return ace    
+    
+    hits = 0 # ace problem
+    original_hand = copy.deepcopy(simulated_hand)
     while not is_bust(simulated_hand):
         hit(simulated_deck, simulated_hand)
         hits += 1
 
-    simulated_hand.pop()
+    modified_hand = simulated_hand[:-1]
+    if is_ace_in_hand(original_hand) and get_hand_value(original_hand) > 16:
+        if not random.choice([0, 1]):
+            modified_hand = original_hand
+            hits = 1
 
-    return simulated_hand, hits - 1
+    return modified_hand, hits - 1 # changed simulated hand > modified hand
 
 def play_sim_round(sim_deck, sim_player, sim_dealer):
     sim_player_hand, hits = simulate_player_hand(sim_deck, sim_player)
-    sim_dealer_hand = dealer_turn(sim_deck, sim_dealer, sim_player)
-    sim_outcome = get_outcome(sim_player_hand, sim_dealer_hand)
+    sim_dealer_hand       = dealer_turn(sim_deck, sim_dealer, sim_player)
+    sim_outcome           = get_outcome(sim_player_hand, sim_dealer_hand)
 
     return sim_outcome, hits
 
@@ -337,7 +354,7 @@ def randomize_hidden_card(deck, dealer_hand):
     sim_deck.remove(new_hidden_card)
     sim_dealer = dealer_copy + [new_hidden_card]
 
-    return sim_deck, sim_dealer
+    return sim_deck, sim_dealer # need to check this is returning randomized hand for dealer
 
 def run_simulation(deck, player_hand, dealer_hand): # maybe build a big function with several nested for simulation
     win_results = {}
@@ -351,11 +368,11 @@ def run_simulation(deck, player_hand, dealer_hand): # maybe build a big function
 
     else:
         sim_depth = prompt_sim_depth()    
-        for _ in range(sim_depth):
+        for _ in range(sim_depth): # redo here so that A + x > 17 returns hand as is
             sim_deck, sim_dealer = randomize_hidden_card(deck, dealer_hand)
-            sim_player = copy.deepcopy(player_hand)
-            sim_outcome, hits = play_sim_round(sim_deck, sim_player, sim_dealer)
-            
+            sim_player           = copy.deepcopy(player_hand)
+            sim_outcome, hits    = play_sim_round(sim_deck, sim_player, sim_dealer)
+
             if sim_outcome[0] == 'P':
                     win_results[hits] = win_results.get(hits, 0) + 1
             elif sim_outcome[0] == 'I':
@@ -375,13 +392,13 @@ def display_sim_results(ordered_results, tie_ratios, sim_depth): # removed win r
     arrow_print(f'Simulated results for {sim_depth} games:')
     for key, win_ratio in ordered_results:
         if key == 0:
-            print_string = [f'Staying at {key} has a {win_ratio * 100:.1f}% win rate ', 
+            print_string = [f'Staying has a {win_ratio * 100:.1f}% win rate ', 
                             f'and a {tie_ratios[key] * 100:.1f}% tie rate' if tie_ratios.get(key)
                   else '']
             print(''.join(print_string))
 
         else:
-            print_string = [f'Hitting to {key} has a {win_ratio * 100:.1f}% win rate ',
+            print_string = [f'Hitting {key} card has a {win_ratio * 100:.1f}% win rate ',
                   f'and a {tie_ratios[key] * 100:.1f}% tie rate' if tie_ratios.get(key)
                   else '']
             print(''.join(print_string))
