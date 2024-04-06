@@ -14,7 +14,7 @@ LOW_ACE_VALUE = 1
 MAX_HAND = 21
 DEALER_MAX = 17
 
-def arrow_print(message): # Better name? print_w_arrow
+def arrow_print(message):
     print(f'==> {message}')
 
 def clear_screen():
@@ -32,9 +32,9 @@ def is_valid_decision(user_input):
 
 def initialize_deck():
     return [{f'{rank} of {suit}': rank} if isinstance(rank, int)
-     else {f'{rank} of {suit}': FACE_VALUES[rank]}
-     for suit in SUITS
-     for rank in RANKS]
+           else {f'{rank} of {suit}': FACE_VALUES[rank]}
+           for suit in SUITS
+           for rank in RANKS]
 
 def deal_hands(deck):
     player_hand = []
@@ -69,38 +69,50 @@ def split_hand(hand):
 def get_card_representation(hand):
     return [card for card_info in hand for card in card_info.keys()]
 
-# def get_ace_values(aces, ace_values, value_ex_aces): ### Refactor didn't work
-#     for ace_info in aces:
-#         for ace, value in ace_info.items():
-#             if value_ex_aces + ace_values > MAX_HAND:
-#                 ace_info[ace] = LOW_ACE_VALUE
-#                 ace_values   -= HIGH_ACE_VALUE - LOW_ACE_VALUE
-    
-#     return ace_values
+def get_card_values(hand):
+    return [value for card_info in hand for value in card_info.values()]
 
 def get_hand_value(hand): # refactor
-    hand_ex_aces, aces = split_hand(hand)
-    value_ex_aces      = sum(value for card_info in hand_ex_aces
-                            for value in card_info.values())
-    ace_values         = sum(value for card_info in aces
-                            for value in card_info.values())
+    # value_ex_aces      = sum(value for card_info in hand_ex_aces
+    #                         for value in card_info.values())
+    # ace_values         = sum(value for card_info in aces
+    #                         for value in card_info.values())
     # updated_ace_values = get_ace_values(aces, ace_values, value_ex_aces)
+
+    # [{'10 of Clubs': 10}, {'8 of Clubs': 8}]
+    def update_aces(value_ex_aces, ace_values, aces):
+        if HIGH_ACE_VALUE not in get_card_values(aces):
+            return ace_values
+        
+        for card_info in aces:
+            for key in card_info:
+                if value_ex_aces + ace_values > MAX_HAND:
+                    card_info[key] = LOW_ACE_VALUE
+                    ace_values = sum(get_card_values(aces))
+
+        return ace_values
     
-    while aces and (value_ex_aces + ace_values > MAX_HAND): # if aces
-        for ace_info in aces:
-            for ace, value in ace_info.items():
-                if value_ex_aces + ace_values > MAX_HAND: # extract lines 79 - 82 to func
-                    if value == HIGH_ACE_VALUE:
-                        ace_info[ace] = LOW_ACE_VALUE
-                        ace_values -= (HIGH_ACE_VALUE - LOW_ACE_VALUE)
+    hand_ex_aces, aces = split_hand(hand)
+    value_ex_aces      = sum(get_card_values(hand_ex_aces))
+    ace_values         = sum(get_card_values(aces))
 
-        if HIGH_ACE_VALUE not in ace_info.values():
-            break
+    updated_ace_values = update_aces(value_ex_aces, ace_values, aces)
+    
+    # while aces and (value_ex_aces + ace_values > MAX_HAND): # if aces
+    #     for ace_info in aces:
+    #         for ace, value in ace_info.items():
+    #             if value_ex_aces + ace_values > MAX_HAND: # extract lines 79 - 82 to func
+    #                 if value == HIGH_ACE_VALUE:
+    #                     ace_info[ace] = LOW_ACE_VALUE
+    #                     ace_values -= (HIGH_ACE_VALUE - LOW_ACE_VALUE)
 
-    return value_ex_aces + ace_values #updated_ace_values
+    #     if HIGH_ACE_VALUE not in ace_info.values():
+    #         break
+
+    return value_ex_aces + updated_ace_values #updated_ace_values
 
 # print(f"No aces ==> {get_hand_value([{'10 of Clubs': 10}, {'8 of Clubs': 8}])}")
-# print(f"One aces ==> {get_hand_value([{'Ace of Hearts': 11}, {'10 of Clubs': 10}])}")
+# print(f"One ace ==> {get_hand_value([{'Ace of Hearts': 11}, {'10 of Clubs': 10}])}")
 # print(f"Two aces ==> {get_hand_value([{'Ace of Hearts': 11}, {'Ace of Clubs': 11}])}")
 # print(f"Two aces ==> {get_hand_value([{'Ace of Hearts': 11}, {'Ace of Clubs': 11}, {'10 of Clubs': 10}])}")
 
@@ -122,7 +134,7 @@ def prompt_player_move(): # Need to update this!!!
 def display_hands(player_hand, dealer_hand, final=False):
     
     def get_card_representation(): ## Need to put in the current values
-        player_cards = [card for card_info in player_hand # Extract this logic out into nested function
+        player_cards = [card for card_info in player_hand # This is doubled with an outside function
                        for card in card_info.keys()]
         dealer_cards = [card for card_info in dealer_hand
                        for card in card_info.keys()]
@@ -252,6 +264,10 @@ def prompt_hint(deck, player_hand, dealer_hand):
         display_hands(player_hand, dealer_hand)
 
 def prompt_play_again(current_cash):
+    if current_cash == 0:
+        print(f'Current cash: ${current_cash}. Uh oh…')
+        return
+    
     arrow_print(f"Current cash: ${current_cash}. "
                 "Would you like to continue playing? Enter [y/n]")
     
@@ -323,6 +339,9 @@ def play_twenty_one():
     
     arrow_print('Thanks for playing!\n')
 
+
+###### Simulation functions
+
 def prompt_sim_depth():
     arrow_print('How many games should I simulate?\n')
     print('Please choose an number between 1000 and 10000.')
@@ -369,8 +388,6 @@ def simulate_player_hand(simulated_deck, simulated_hand):
 
     # if is_ace_in_hand(hand_pre_hits) and get_hand_value(hand_pre_hits) > 16:
     #     return randomized_outcome(hand_pre_hits)
-
-
 
     # while not is_bust(simulated_hand):
     #     hit(simulated_deck, simulated_hand)
@@ -467,4 +484,4 @@ def get_optimal_strategy(ordered_results): # working but logic potentially wrong
     return 'hit' if total_hit_win_percentage > stay_win_percentage else 'stay'
 
 
-play_twenty_one()
+# play_twenty_one()
