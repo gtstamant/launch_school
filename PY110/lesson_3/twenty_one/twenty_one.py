@@ -121,16 +121,16 @@ def display_hands(player_hand, dealer_hand, final=False):
 
     player_cards, dealer_cards = get_card_names()
 
-    print(f"Your hand:   {', '.join(player_cards[:-1])}"
-            f"{',' if len(player_cards) > 2 else ''} and {player_cards[-1]}. "
-            f"Total hand value: {get_hand_value(player_hand)}")
+    print(f"Your hand: {', '.join(player_cards[:-1])}"
+            f"{',' if len(player_cards) > 2 else ''} and {player_cards[-1]}. \n"
+            f"Your hand value: {get_hand_value(player_hand)}\n")
 
     if not final:
         print(f"Dealer hand: {', '.join(dealer_cards[1:])}"
                f"{',' if len(dealer_cards) > 2 else ''} and ? of ?")
     else:
         print(f"Dealer hand: {', '.join(dealer_cards[:-1])}"
-               f"{',' if len(dealer_cards) > 2 else ''} and {dealer_cards[-1]}. "
+               f"{',' if len(dealer_cards) > 2 else ''} and {dealer_cards[-1]}. \n"
                f"Dealer hand value: {get_hand_value(dealer_hand)}")
     print('')
 
@@ -359,11 +359,13 @@ def simulate_player_hand(simulated_deck, simulated_hand):
         return (is_high_ace_in_hand(hand) and 
                 get_hand_value(hand) > ACE_TEST_FORK_MIN)
 
+    def get_card_representation(hand):
+        return [key for card_info in hand
+                for key in card_info.keys()]
+    
     def restore_original_hand(new_hand, original_hand):
-        new_hand_cards = [key for card_info in new_hand
-                          for key in card_info.keys()]
-        old_hand_cards = [key for card_info in original_hand
-                          for key in card_info.keys()]
+        new_hand_cards = get_card_representation(new_hand)
+        old_hand_cards = get_card_representation(original_hand)
         
         if new_hand_cards == old_hand_cards:
             return original_hand
@@ -376,11 +378,6 @@ def simulate_player_hand(simulated_deck, simulated_hand):
     while not is_bust(simulated_hand):
         if is_ace_fork(simulated_hand):
             if random.choice([0, 1]):
-                # hit(simulated_deck, simulated_hand)
-                # if is_bust(simulated_hand):
-                    # busts += 1
-                # print(f'Orig hand: {original_hand}')
-                # input()
                 return simulated_hand, hits, busts
 
         hit(simulated_deck, simulated_hand)
@@ -409,10 +406,6 @@ def randomize_hidden_card(deck, dealer_hand):
 
 def play_sim_round(sim_deck, sim_player, sim_dealer):
     sim_player_hand, hits, busts = simulate_player_hand(sim_deck, sim_player)
-    # if hits == 0:
-    #     print(sim_player_hand)
-    #     input()
-    
     sim_dealer_hand       = dealer_turn(sim_deck, sim_dealer, sim_player)
     sim_outcome           = get_outcome(sim_player_hand, sim_dealer_hand)
 
@@ -420,31 +413,45 @@ def play_sim_round(sim_deck, sim_player, sim_dealer):
 
 def run_simulation(deck, player_hand, dealer_hand):
     
-    def get_percent_chance_no_bust(simulation_results):
+    def get_total_busts(simulation_results):
         ordered_keys = sorted(list(simulation_results.keys()))
+        hits_to_bust = {num: simulation_results[num][3] for num in ordered_keys}
         
-        hits_past = {num: simulation_results[num][3] for num in ordered_keys}
-        
-        hits_at_level = {}
+        busts_at_level = {}
         running_total = 0
+        for num in hits_to_bust:
+            running_total += hits_to_bust[num]
+            busts_at_level[num] = running_total
 
-        for num in hits_past:
-            running_total += hits_past[num]
-            hits_at_level[num] = running_total
+        return busts_at_level
+    
+    def get_attempts_at_level(simulation_results, ordered_keys, busts_at_level):
+        # plays_excl_busts   = {num: sum(simulation_results[num][:-1]) 
+        #                      for num in ordered_keys} # should incorporate all above levs
+        sub_list = ordered_keys[1:]
+        total_excl_busts   = {key: 0 for key in sub_list}
+        for idx, key in enumerate(sub_list):
+            for element in sub_list[idx:]:
+                total_excl_busts[key] += sum(simulation_results[element][:-1])
 
-        # % chance of reaching a level without busting
-        level_total = {num: sum(simulation_results[num][:-1]) 
-                           for num in ordered_keys}
-        # sum(data[:-1]) for data in simulation_results.values()]
+        plays_incl_busts   = {num: total_excl_busts[num] + busts_at_level[num - 1]
+                             for num in sub_list}
 
-        aggregate_level = {num: level_total[num] + hits_at_level[num - 1]
-                          for num in ordered_keys[1:]}
-        
-        chance_to_level = {num: (level_total[num]/aggregate_level[num])
-                        for num in aggregate_level.keys()}
-        chance_to_level[ordered_keys[0]] = 1 # 100% chance of reaching level
+        return total_excl_busts, plays_incl_busts
 
-        return chance_to_level
+    def get_percent_chance_no_bust(simulation_results):
+        # Calculate % chance of reaching a level without busting
+        ordered_keys = sorted(list(simulation_results.keys()))
+        busts_at_level = get_total_busts(simulation_results)
+        plays_excl_busts, plays_incl_busts = get_attempts_at_level(simulation_results, 
+                                                                   ordered_keys, 
+                                                                   busts_at_level)
+
+        percent_chance_no_bust = {num: (plays_excl_busts[num]/plays_incl_busts[num])
+                                 for num in plays_incl_busts.keys()}
+        percent_chance_no_bust[ordered_keys[0]] = 1 # 100% chance of reaching level 1
+
+        return percent_chance_no_bust
 
     def get_ratios(simulation_results):
         
@@ -502,17 +509,13 @@ def run_simulation(deck, player_hand, dealer_hand):
 
     win_ratios, tie_ratios = get_ratios(simulation_results)
     
-    ordered_keys = sorted(list(win_ratios.keys()))
-    for num in ordered_keys: # rewrite
-        if num == 0:
-            print(f'Stay: win rate {win_ratios[num] * 100:.2f}%, tie: {tie_ratios[num] * 100:.2f}%')
-        else:
-            print(f'{num}: win rate {win_ratios[num] * 100:.2f}%, tie: {tie_ratios[num] * 100:.2f}%')
+    display_sim_results(win_ratios, tie_ratios, sim_depth)
 
-def display_sim_results(ordered_results, tie_ratios, sim_depth):
+def display_sim_results(win_ratios, tie_ratios, sim_depth):
     clear_screen()
+    # sorted_by_wins = sorted(list(win_ratios.keys(), key=win_ratios.get)) Need to give in optimal order
     arrow_print(f'Simulated results for {sim_depth} games:')
-    for key, win_ratio in ordered_results:
+    for key, win_ratio in win_ratios.items():
         if key == 0:
             print_string = [('Staying has   a '
                              f'{win_ratio * 100:.1f}% win rate '), 
@@ -532,6 +535,7 @@ def display_sim_results(ordered_results, tie_ratios, sim_depth):
     #print('The optimal strategy is to ' 
     # f'{get_optimal_strategy(ordered_results)}\n')
 
+## Maybe do "optimal strategy to avoid loss?"
 ## Removed the following function as 
 ## I am not certain whether the logic is quite right
 
