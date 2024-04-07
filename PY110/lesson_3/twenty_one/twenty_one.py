@@ -140,7 +140,7 @@ def display_hands(player_hand, dealer_hand, final=False):
     else:
         print(f"Dealer hand: {', '.join(dealer_cards[:-1])}"
                f"{',' if len(dealer_cards) > 2 else ''} " 
-               f"and {dealer_cards[-1]}."
+               f"and {dealer_cards[-1]}. "
                f"Total: {get_hand_value(dealer_hand)}")
     print('')
 
