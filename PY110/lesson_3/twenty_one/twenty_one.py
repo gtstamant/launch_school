@@ -332,8 +332,7 @@ def play_multiple_rounds():
 
         deck, player_hand, dealer_hand = deal_hands(deck)
         outcome, player_hand, dealer_hand, turn_bets = (
-            play_round(deck, player_hand, dealer_hand, total_cash)
-            )
+            play_round(deck, player_hand, dealer_hand, total_cash))
 
         display_winner(outcome, player_hand, dealer_hand)
         total_cash.extend(turn_bets)
