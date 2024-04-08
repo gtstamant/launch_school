@@ -290,7 +290,6 @@ def set_cash_input():
         if is_valid_cash_pile(initial_cash):
             return int(initial_cash)
 
-        clear_screen()
         print("That's not a valid cash amount. "
               "Enter a positive integer between $1 and $500:")
 
@@ -450,89 +449,88 @@ def play_sim_round(sim_deck, sim_player, sim_dealer):
 
     return sim_outcome, hits, busts
 
-def run_simulation(deck, player_hand, dealer_hand):
+def get_total_busts(simulation_results, ordered_keys):
+    hits_to_bust = {num: simulation_results[num][3]
+                    for num in ordered_keys}
 
-    def get_total_busts(simulation_results, ordered_keys):
-        hits_to_bust = {num: simulation_results[num][3]
-                        for num in ordered_keys}
+    busts_at_level = {}
+    running_total = 0
+    for num in hits_to_bust:
+        running_total += hits_to_bust[num]
+        busts_at_level[num] = running_total
 
-        busts_at_level = {}
-        running_total = 0
-        for num in hits_to_bust:
-            running_total += hits_to_bust[num]
-            busts_at_level[num] = running_total
+    return busts_at_level
 
-        return busts_at_level
-
-    def get_attempts_at_level(simulation_results,
+def get_attempts_at_level(simulation_results,
                               ordered_keys,
                               busts_at_level):
 
-        sub_list = ordered_keys[1:]
-        total_excl_busts   = {key: 0 for key in sub_list}
-        for idx, key in enumerate(sub_list):
-            for element in sub_list[idx:]:
-                total_excl_busts[key] += sum(simulation_results[element][:-1])
+    sub_list = ordered_keys[1:]
+    total_excl_busts   = {key: 0 for key in sub_list}
+    for idx, key in enumerate(sub_list):
+        for element in sub_list[idx:]:
+            total_excl_busts[key] += sum(simulation_results[element][:-1])
 
-        plays_incl_busts   = {num: total_excl_busts[num]
-                             + busts_at_level[num - 1]
-                             for num in sub_list}
+    plays_incl_busts = {num: total_excl_busts[num] + busts_at_level[num - 1]
+                        for num in sub_list}
 
-        return total_excl_busts, plays_incl_busts
+    return total_excl_busts, plays_incl_busts
 
-    def get_percent_chance_no_bust(simulation_results, ordered_keys):
-        # Calculate % chance of reaching a level without busting
-        busts_at_level = get_total_busts(simulation_results, ordered_keys)
-        plays_excl_busts, plays_incl_busts = (
-            get_attempts_at_level(simulation_results,
-                                  ordered_keys,
-                                  busts_at_level))
+# Calculate % chance of reaching a level without busting
+def get_percent_chance_no_bust(simulation_results, ordered_keys):
+    busts_at_level = get_total_busts(simulation_results, ordered_keys)
+    plays_excl_busts, plays_incl_busts = (get_attempts_at_level(
+                                          simulation_results,
+                                          ordered_keys,
+                                          busts_at_level))
 
-        percent_chance_no_bust = {num:
-                                  (plays_excl_busts[num]
-                                   /plays_incl_busts[num])
+    percent_chance_no_bust = {num: (plays_excl_busts[num]
+                                    / plays_incl_busts[num])
                                    for num in plays_incl_busts.keys()}
-        # 100% chance of reaching level 0
-        percent_chance_no_bust[ordered_keys[0]] = 1
+    # 100% chance of reaching level 0
+    percent_chance_no_bust[ordered_keys[0]] = 1
 
-        return percent_chance_no_bust
+    return percent_chance_no_bust
 
-    def get_ratios(simulation_results):
+def get_ratios(simulation_results):
 
-        def get_local_ratio(dictionary, key, win_or_tie):
-            match win_or_tie:
-                case 'win':
-                    win_or_tie = 0
-                case 'tie':
-                    win_or_tie = 1
-            try:
-                return (dictionary[key][win_or_tie] /
+    def get_local_ratio(dictionary, key, win_or_tie):
+        match win_or_tie:
+            case 'win':
+                win_or_tie = 0
+            case 'tie':
+                win_or_tie = 1
+        try:
+            return (dictionary[key][win_or_tie] /
                         sum(dictionary[key][:-1]))
-            except ZeroDivisionError:
-                return 0
+        except ZeroDivisionError:
+            return 0
 
-        ordered_keys = sorted(list(simulation_results.keys()))
-        percentage_to_hit_level = (
-                    get_percent_chance_no_bust(simulation_results,
+    ordered_keys = sorted(list(simulation_results.keys()))
+    percentage_to_hit_level = (get_percent_chance_no_bust(
+                                               simulation_results,
                                                ordered_keys))
 
-        local_win_ratios = {num:
-                            get_local_ratio(simulation_results, num, 'win')
+    local_win_ratios = {num:get_local_ratio(simulation_results,
+                                            num,
+                                            'win')
                             for num in ordered_keys}
-        local_tie_ratios = {num:
-                            get_local_ratio(simulation_results, num, 'tie')
+    local_tie_ratios = {num: get_local_ratio(simulation_results,
+                                             num,
+                                             'tie')
                             for num in ordered_keys}
 
-        global_win_ratios = {num: (local_win_ratios[num] *
+    global_win_ratios = {num: (local_win_ratios[num] *
                           percentage_to_hit_level[num])
                           for num in ordered_keys}
 
-        global_tie_ratios = {num: (local_tie_ratios[num] *
+    global_tie_ratios = {num: (local_tie_ratios[num] *
                           percentage_to_hit_level[num])
                           for num in ordered_keys}
 
-        return global_win_ratios, global_tie_ratios
+    return global_win_ratios, global_tie_ratios
 
+def run_simulation(deck, player_hand, dealer_hand):
     simulation_results = {}
     current_total = get_hand_value(player_hand)
 
@@ -546,8 +544,8 @@ def run_simulation(deck, player_hand, dealer_hand):
         sim_deck, sim_dealer = randomize_hidden_card(deck, dealer_hand)
         sim_player           = copy.deepcopy(player_hand)
         sim_outcome, hits, busts = play_sim_round(sim_deck,
-                                                    sim_player,
-                                                    sim_dealer)
+                                                  sim_player,
+                                                  sim_dealer)
 
         if hits not in simulation_results:
             simulation_results[hits] = [0, 0, 0, 0]
@@ -563,6 +561,8 @@ def run_simulation(deck, player_hand, dealer_hand):
     win_ratios, tie_ratios = get_ratios(simulation_results)
 
     display_sim_results(win_ratios, tie_ratios, sim_depth)
+
+    return None
 
 def display_sim_results(win_ratios, tie_ratios, sim_depth):
     clear_screen()
@@ -588,9 +588,11 @@ def display_sim_results(win_ratios, tie_ratios, sim_depth):
     print('The optimal strategy to avoid losing is '
     f'{get_optimal_strategy(win_ratios, tie_ratios)}\n')
 
+# I'm not certain whether the following logic is right
+# Perhaps should aggregate win/ties for all successful hit outcomes
 def get_optimal_strategy(win_ratios, tie_ratios):
     combined_ratios = [(key, win_ratios[key] + tie_ratios[key]
-                        if key in tie_ratios else win_ratios[key])
+                       if key in tie_ratios else win_ratios[key])
                        for key in win_ratios]
 
     combined_ratios.sort(key=lambda x: x[1], reverse=True)
