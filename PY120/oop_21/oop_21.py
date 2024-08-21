@@ -15,6 +15,48 @@ class Card:
                 return self.ACE_VALUE
             return self.FACE_VALUE
 
+    def return_ascii(self):
+        if self.rank != '10':
+            left_rank = self.rank + ' '
+            right_rank = ' ' + self.rank
+        
+        else:
+            left_rank, right_rank = self.rank, self.rank
+
+        if self.suit == 'Spades':
+            line_1 = ' _______ '
+            line_2 = f'|{left_rank} .   |'
+            line_3 = r'|  /.\  |'
+            line_4 = '| (_._) |'
+            line_5 = '|   |   |'
+            line_6 = f'|_____{right_rank}|'
+
+        if self.suit == 'Hearts':
+            line_1 = ' _______ '
+            line_2 = f'|{left_rank}_ _  |'
+            line_3 = '| ( v ) |'
+            line_4 = r'|  \ /  |'
+            line_5 = '|   .   |'
+            line_6 = f'|_____{right_rank}|'
+
+        if self.suit == 'Diamonds':
+            line_1 = ' _______ '
+            line_2 = f'|{left_rank} ^   |'
+            line_3 = r'|  / \  |'
+            line_4 = r'|  \ /  |'
+            line_5 = '|   .   |'
+            line_6 = f'|_____{right_rank}|'
+
+        if self.suit == 'Clubs':
+            line_1 = ' _______ '
+            line_2 = f'|{left_rank} _   |'
+            line_3 = '|  ( )  |'
+            line_4 = "| (_'_) |"
+            line_5 = '|   |   |'
+            line_6 = f'|_____{right_rank}|'
+
+        return [line_1, line_2, line_3, line_4, line_5, line_6]
+
     def print_ascii(self):
         if self.rank != '10':
             left_rank = self.rank + ' '
@@ -137,12 +179,21 @@ class TwentyOneGame:
     def deal_cards(self):
         self.player.hand = self.deck.deal()
         self.dealer.hand = self.deck.deal()
-
-    def show_hand(self, player):
-        print(f"{player}'s cards:")
-        for card in player.hand:
-            card.print_ascii()
     
+    def show_hand(self, player):
+        card_art = []
+        for card in player.hand:
+            card_art += [card.return_ascii()]
+
+        print(f"{player}'s cards:")
+
+        for line_num in range(6):
+            line = ''
+            for card_num in range(len(card_art)):
+                line += card_art[card_num][line_num] + ' '
+
+            print(line)
+
     def show_dealer_card(self):
         print("Dealer's card:")
         self.dealer.hand[0].print_ascii()
@@ -178,7 +229,8 @@ class TwentyOneGame:
             self.show_cards()
 
     def dealer_turn(self):
-        while self.dealer.get_score() < 17:
+        
+        while self.dealer.get_score() < 17 and not self.player.is_busted():
             self.dealer.hand += self.deck.hit()
             print('Dealer draws:')
             self.dealer.hand[-1].print_ascii()
@@ -197,8 +249,24 @@ class TwentyOneGame:
         print('Thanks for playing!')
 
     def display_result(self):
-        # STUB
-        pass
+        player_score = self.player.get_score()
+        dealer_score = self.dealer.get_score()
+
+        if self.player.is_busted():
+            winner = self.dealer
+            loser = self.player
+        elif self.dealer.is_busted():
+            winner = self.player
+            loser = self.dealer
+        elif player_score > dealer_score:
+            winner = self.player
+            loser = self.dealer
+        else:
+            winner = self.dealer
+            loser = self.player
+            
+        print(f'{winner} wins with a score of {winner.get_score()}')
+        print(f'{loser} loses with a score of {loser.get_score()}')
 
 game = TwentyOneGame()
 game.start()
