@@ -1,3 +1,4 @@
+import os
 from random import *
 
 class Card:
@@ -10,9 +11,11 @@ class Card:
     def get_value(self):
         try:
             return int(self.rank)
+        
         except ValueError:
             if self.rank == 'A':
                 return self.ACE_VALUE
+            
             return self.FACE_VALUE
 
     def return_ascii(self):
@@ -57,46 +60,6 @@ class Card:
 
         return [line_1, line_2, line_3, line_4, line_5, line_6]
 
-    def print_ascii(self):
-        if self.rank != '10':
-            left_rank = self.rank + ' '
-            right_rank = ' ' + self.rank
-        
-        else:
-            left_rank, right_rank = self.rank, self.rank
-
-        if self.suit == 'Spades':
-            print(' _______ ')
-            print(f'|{left_rank} .   |')
-            print(r'|  /.\  |')
-            print('| (_._) |')
-            print('|   |   |')
-            print(f'|_____{right_rank}|')
-        
-        if self.suit == 'Hearts':
-            print(' _______ ')
-            print(f'|{left_rank}_ _  |')
-            print('| ( v ) |')
-            print(r'|  \ /  |')
-            print('|   .   |')
-            print(f'|_____{right_rank}|')
-
-        if self.suit == 'Diamonds':
-            print(' _______ ')
-            print(f'|{left_rank} ^   |')
-            print(r'|  / \  |')
-            print(r'|  \ /  |')
-            print('|   .   |')
-            print(f'|_____{right_rank}|')
-
-        if self.suit == 'Clubs':
-            print(' _______ ')
-            print(f'|{left_rank} _   |')
-            print('|  ( )  |')
-            print("| (_'_) |")
-            print('|   |   |')
-            print(f'|_____{right_rank}|')
-
     def __str__(self):
         return f"{self.rank} of {self.suit}"
 
@@ -108,6 +71,7 @@ class Deck:
     def __init__(self):
         self.cards = [Card(rank, suit) for suit in self.SUITS
                                        for rank in self.RANKS]
+        
         shuffle(self.cards)
 
     def deal(self):
@@ -117,64 +81,43 @@ class Deck:
         return [self.cards.pop()]
 
 class Participant:
-    def __init__(self):
-        # STUB
-        # What attributes does a participant require? Score?
-        #   Hand? Betting balance?
-        # What else goes here? all the redundant behaviors
-        #   from Player and Dealer?
+    def __init__(self, role, money=0):
         self.hand = []
-        self.score = 0
-
-    def stay(self):
-        # STUB
-        pass
+        self.role = role
+        self.money = money
 
     def is_busted(self):
-        return self.get_score() > 22
+        return self.get_score() > 21
 
     def get_score(self):
-        return sum([card.get_value() for card in self.hand])
-    
+        total = sum([card.get_value() for card in self.hand])
+        ranks = [card.rank for card in self.hand]
+
+        if total > 21 and 'A' in ranks:
+            num_aces = ranks.count('A')
+            
+            while num_aces > 0 and total > 21:
+                total -= 10
+                num_aces -= 1
+        
+        return total
+
     def __str__(self):
-        return self.__class__.__name__
-
-class Player(Participant):
-    def __init__(self):
-        # STUB
-        # What additional attributes might a player need?
-        # Score? Hand? Amount of money available?
-        pass
-
-class Dealer(Participant):
-    def __init__(self):
-        # STUB
-        # Very similar to a Player; do we need this?
-        pass
-
-    def hide(self):
-        # STUB
-        pass
-
-    def reveal(self):
-        # STUB
-        pass
+        return self.role
 
 class TwentyOneGame:
-    def __init__(self):
+    def __init__(self, player, dealer):
         self.deck = Deck()
-        self.player = Player()
-        self.dealer = Dealer()
+        self.player = player
+        self.dealer = dealer
 
     def start(self):
-        # SPIKE
-        self.display_welcome_message()
         self.deal_cards()
         self.show_cards()
         self.player_turn()
         self.dealer_turn()
         self.display_result()
-        self.display_goodbye_message()
+        self.adjust_money()
 
     def deal_cards(self):
         self.player.hand = self.deck.deal()
@@ -196,20 +139,30 @@ class TwentyOneGame:
 
     def show_dealer_card(self):
         print("Dealer's card:")
-        self.dealer.hand[0].print_ascii()
+        for line in self.dealer.hand[0].return_ascii():
+            print(line)
 
     def show_cards(self):
+        print('Here are the current hands:')
+        print()
         self.show_hand(self.player)
         print()
         self.show_dealer_card()
+        print()
 
     def show_cards_w_dealer(self):
+        print("Here are the final hands: ")
+        print()
         self.show_hand(self.player)
         print()
         self.show_hand(self.dealer)
+        print()
     
     def player_turn(self):
         while not self.player.is_busted():
+            print(f'Player score: {self.player.get_score()}  '  
+                  f'Dealer score: {self.dealer.get_score()}')
+            print()
             print('Would you like to hit or stay?: ')
             
             while True:
@@ -220,35 +173,36 @@ class TwentyOneGame:
                 print("That's not a valid input. Please type 'hit' or 'stay'.")
             
             if choice == 'stay':
+                print()
                 print("You have chosen to stay. Dealer's turn.")
+                print()
                 break
-            
+
             self.player.hand += self.deck.hit()
 
-            print('Here are the hands:')
+            os.system('clear')
             self.show_cards()
 
     def dealer_turn(self):
-        
         while self.dealer.get_score() < 17 and not self.player.is_busted():
             self.dealer.hand += self.deck.hit()
-            print('Dealer draws:')
-            self.dealer.hand[-1].print_ascii()
+            print('Dealer hits!')
+            print()
+            self.show_hand(self.dealer)
+            print()
             
+            print(f'Player score: {self.player.get_score()}  '  
+                  f'Dealer score: {self.dealer.get_score()}')
+            print()
+
             if self.dealer.is_busted():
                 print('Dealer is bust!')
-                break
-                
-        print("Here are the final hands: ")
+                print()
+
+        os.system('clear')
         self.show_cards_w_dealer()
 
-    def display_welcome_message(self):
-        print('Welcome to 21!')
-
-    def display_goodbye_message(self):
-        print('Thanks for playing!')
-
-    def display_result(self):
+    def get_winner_and_loser(self):
         player_score = self.player.get_score()
         dealer_score = self.dealer.get_score()
 
@@ -264,9 +218,79 @@ class TwentyOneGame:
         else:
             winner = self.dealer
             loser = self.player
-            
-        print(f'{winner} wins with a score of {winner.get_score()}')
-        print(f'{loser} loses with a score of {loser.get_score()}')
 
-game = TwentyOneGame()
-game.start()
+        return winner, loser
+    
+    def adjust_money(self):
+        winner = self.get_winner_and_loser()[0]
+
+        if winner is self.player:
+            self.player.money += 1
+        else:
+            self.player.money -= 1
+        
+        print(f"Player now has ${self.player.money}")
+        print()
+
+    def display_result(self):
+
+        winner, loser = self.get_winner_and_loser()
+            
+        print(f'{winner.role} wins with a score of {winner.get_score()}')
+        print(f'{loser.role} loses with a score of {loser.get_score()}')
+        print()
+
+class TwentyOneSeries():
+    def __init__(self):
+        self.player = Participant('Player', 5)
+        self.dealer = Participant('Dealer')
+    
+    def series(self):
+        while True:
+            game = TwentyOneGame(self.player, self.dealer)
+            game.start()
+
+            if not (0 < self.player.money < 10):
+                break
+
+            user_choice = input('Would you like to play again? ').lower()
+
+            while user_choice not in ['y', 'yes', 'n', 'no']:
+                print("That's not a valid input. Please choose 'yes' or 'no'.")
+                user_choice = input()
+
+            if user_choice[0] == 'n':
+                break
+            
+            os.system('clear')
+
+    def display_goodbye_message(self):
+        os.system('clear')
+        if self.player.money == 10:
+            print("You're too rich, time to end the game!")
+        elif self.player.money == 0:
+            print("Uh oh...you're out of cash")
+        else:
+            print(f'Player ends with ${self.player.money}')
+
+        print()
+        print('Thanks for playing!')
+        print()
+
+    def display_welcome_message(self):
+        print()
+        print(f'Welcome to 21! Player starting with ${self.player.money}')
+        print()
+    
+    def start_series(self):
+        input('Press [enter] to start the series')
+        os.system('clear')
+
+    def play_series(self):
+        self.display_welcome_message()
+        self.start_series()
+        self.series()
+        self.display_goodbye_message()
+
+series = TwentyOneSeries()
+series.play_series()
