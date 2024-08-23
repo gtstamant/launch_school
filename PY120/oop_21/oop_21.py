@@ -72,7 +72,6 @@ class Deck:
     def __init__(self):
         self.cards = [Card(rank, suit) for suit in self.SUITS
                                        for rank in self.RANKS]
-
         shuffle(self.cards)
 
     def deal(self):
@@ -89,7 +88,7 @@ class Participant:
 
     def is_busted(self):
         return self.get_score() > 21
-
+    
     def get_score(self):
         total = sum([card.get_value() for card in self.hand])
         ranks = [card.rank for card in self.hand]
@@ -129,7 +128,8 @@ class TwentyOneGame:
         for card in player.hand:
             card_art += [card.return_ascii()]
 
-        print(f"{player}'s cards:" if not player.is_busted() else f"{player} busts!")
+        print(f"{player}'s cards:" if not player.is_busted() 
+                                   else f"{player} busts!")
 
         for line_num in range(6):
             line = ''
@@ -160,7 +160,7 @@ class TwentyOneGame:
         print()
     
     def player_turn(self):
-        while not self.player.is_busted():
+        while self.player.get_score() < 21:
             print(f'|| Player score: {self.player.get_score()} || '
                   f'|| Player bank: ${self.player.money} ||')
             print()
@@ -172,7 +172,7 @@ class TwentyOneGame:
                     break
 
                 print("That's not a valid input. Please type 'hit' or 'stay'.")
-            
+
             if choice == 'stay':
                 print()
                 print("You have chosen to stay. Dealer's turn.")
