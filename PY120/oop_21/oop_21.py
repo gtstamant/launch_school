@@ -1,13 +1,19 @@
 import os
 from random import *
 
+def clear_screen():
+    os.system('clear')
+
 class Card:
     ACE_VALUE  = 11
     FACE_VALUE = 10
+    SUITS = ['Clubs', 'Diamonds', 'Hearts', 'Spades']
+    RANKS = [str(num) for num in range(2, 11)] + ['J', 'Q', 'K', 'A']
 
     def __init__(self, rank, suit):
         self.rank = rank
         self.suit = suit
+        self.hidden = False
 
     def get_value(self):
         try:
@@ -19,7 +25,26 @@ class Card:
 
             return self.FACE_VALUE
 
+    def hide_card(self):
+        self.hidden = True
+    
+    def reveal_card(self):
+        self.hidden = False
+    
+    def is_hidden(self):
+        return self.hidden
+    
     def return_ascii(self):
+        if self.is_hidden():
+            line_1 = ' _______ '
+            line_2 = '|_______| '
+            line_3 = '|_______|'
+            line_4 = '|_______|'
+            line_5 = '|_______|'
+            line_6 = '|_______| '
+            
+            return [line_1, line_2, line_3, line_4, line_5, line_6]
+
         if self.rank != '10':
             left_rank = self.rank + ' '
             right_rank = ' ' + self.rank
@@ -35,7 +60,7 @@ class Card:
             line_5 = '|   |   |'
             line_6 = f'|_____{right_rank}|'
 
-        if self.suit == 'Hearts':
+        elif self.suit == 'Hearts':
             line_1 = ' _______ '
             line_2 = f'|{left_rank}_ _  |'
             line_3 = '| ( v ) |'
@@ -43,7 +68,7 @@ class Card:
             line_5 = '|   .   |'
             line_6 = f'|_____{right_rank}|'
 
-        if self.suit == 'Diamonds':
+        elif self.suit == 'Diamonds':
             line_1 = ' _______ '
             line_2 = f'|{left_rank} ^   |'
             line_3 = r'|  / \  |'
@@ -51,7 +76,7 @@ class Card:
             line_5 = '|   .   |'
             line_6 = f'|_____{right_rank}|'
 
-        if self.suit == 'Clubs':
+        elif self.suit == 'Clubs':
             line_1 = ' _______ '
             line_2 = f'|{left_rank} _   |'
             line_3 = '|  ( )  |'
@@ -61,21 +86,17 @@ class Card:
 
         return [line_1, line_2, line_3, line_4, line_5, line_6]
 
-    def __str__(self):
-        return f"{self.rank} of {self.suit}"
-
 class Deck:
-    SUITS = ['Clubs', 'Diamonds', 'Hearts', 'Spades']
-    RANKS = [str(num) for num in range(2, 11)] + ['J', 'Q', 'K', 'A']
-    HAND_SIZE = 2
-
     def __init__(self):
-        self.cards = [Card(rank, suit) for suit in self.SUITS
-                                       for rank in self.RANKS]
-        shuffle(self.cards)
+        self.cards = [Card(rank, suit) for suit in Card.SUITS
+                                       for rank in Card.RANKS]
+        self.shuffle_deck()
 
+    def shuffle_deck(self):
+        shuffle(self.cards)
+    
     def deal(self):
-        return [self.cards.pop() for _ in range(self.HAND_SIZE)]
+        return [self.cards.pop() for _ in range(TwentyOneGame.HAND_SIZE)]
 
     def hit(self):
         return [self.cards.pop()]
@@ -85,7 +106,14 @@ class Participant:
         self.hand = []
         self.role = role
         self.money = money
+        self.TARGET = 10
 
+    def is_out_of_money(self):
+        return self.money == 0
+    
+    def is_rich(self):
+        return self.money > self.TARGET
+    
     def is_busted(self):
         return self.get_score() > 21
     
@@ -106,6 +134,8 @@ class Participant:
         return self.role
 
 class TwentyOneGame:
+    HAND_SIZE = 2
+
     def __init__(self, player, dealer):
         self.deck = Deck()
         self.player = player
@@ -122,6 +152,7 @@ class TwentyOneGame:
     def deal_cards(self):
         self.player.hand = self.deck.deal()
         self.dealer.hand = self.deck.deal()
+        self.dealer.hand[1].hide_card()
 
     def show_hand(self, player):
         card_art = []
@@ -138,17 +169,12 @@ class TwentyOneGame:
 
             print(line)
 
-    def show_dealer_card(self):
-        print("Dealer's card:")
-        for line in self.dealer.hand[0].return_ascii():
-            print(line)
-
     def show_cards(self):
         print('Here are the current hands:')
         print()
         self.show_hand(self.player)
         print()
-        self.show_dealer_card()
+        self.show_hand(self.dealer)
         print()
 
     def show_cards_w_dealer(self):
@@ -181,10 +207,11 @@ class TwentyOneGame:
 
             self.player.hand += self.deck.hit()
 
-            os.system('clear')
+            clear_screen()
             self.show_cards()
 
     def dealer_turn(self):
+        self.dealer.hand[1].reveal_card()
         while self.dealer.get_score() < 17 and not self.player.is_busted():
             self.dealer.hand += self.deck.hit()
             print('Dealer hits!')
@@ -200,8 +227,8 @@ class TwentyOneGame:
                 print('Dealer is bust!')
                 print()
 
-        os.system('clear')
-        self.show_cards_w_dealer()
+        clear_screen()
+        self.show_cards()
 
     def is_tied(self):
         return self.player.get_score() == self.dealer.get_score()
@@ -273,30 +300,33 @@ class TwentyOneSeries():
             if user_choice[0] == 'n':
                 break
             
-            os.system('clear')
+            clear_screen()
 
     def display_goodbye_message(self):
-        os.system('clear')
-        if self.player.money == 10:
+        clear_screen()
+        if self.player.is_rich():
             print("You're too rich, time to end the game!")
-        elif self.player.money == 0:
+        elif self.player.is_out_of_money():
             print("Uh oh...you're out of cash")
         else:
             print(f'Player ends with ${self.player.money}')
 
         print()
         print('Game over. Thanks for playing!')
-        print('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
+        print()
+        print('Press [enter] to exit the game')
+        input()
+        clear_screen()
 
     def display_welcome_message(self):  
-        os.system('clear')
+        clear_screen()
         print(f'Welcome to 21! Player starts with ${self.player.money}')
         print()
     
     def start_series(self):
         print('Press [enter] to start the series')
         input()
-        os.system('clear')
+        clear_screen()
 
     def play_series(self):
         self.display_welcome_message()
