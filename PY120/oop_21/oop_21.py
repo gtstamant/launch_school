@@ -127,7 +127,7 @@ class Participant:
         return self.money == 0
 
     def is_rich(self):
-        return self.money > Participant.TARGET_CASH
+        return self.money >= Participant.TARGET_CASH
 
     def is_busted(self):
         return self.get_score() > 21
@@ -155,6 +155,7 @@ class TwentyOneGame:
     WINNING_SCORE = 21
     DEALER_MAX = 17
     DEALER_HIDDEN_CARD_IDX = 1
+    BET_SIZE = 1
     STAY = 's'
     HIT = 'h'
 
@@ -264,14 +265,14 @@ class TwentyOneGame:
 
         return winner, loser
 
-    def adjust_money(self):
+    def adjust_money(self, BET_SIZE):
         if not self.is_tied():
             winner = self.get_winner_and_loser()[0]
 
             if winner is self.player:
-                self.player.money += 1
+                self.player.money += BET_SIZE
             else:
-                self.player.money -= 1
+                self.player.money -= BET_SIZE
 
     def start_game(self):
         self.deal_hands()
@@ -279,7 +280,7 @@ class TwentyOneGame:
         self.player_turn()
         self.dealer_turn()
         self.display_result()
-        self.adjust_money()
+        self.adjust_money(self.BET_SIZE)
 
 class TwentyOneSeries():
     PLAY_AGAIN_CHOICES = ['y', 'n']
@@ -309,12 +310,12 @@ class TwentyOneSeries():
             clear_screen()
 
     def display_goodbye_message(self):
-        clear_screen()
         if self.player.is_rich():
-            print("You're too rich, time to end the game!")
+            print("You're too rich. No more money for you!")
         elif self.player.is_out_of_money():
             print("Uh oh...you're out of cash!")
         else:
+            clear_screen()
             print(f'Player ends with ${self.player.money}')
 
         print()
