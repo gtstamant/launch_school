@@ -1,12 +1,22 @@
 import os
-from random import *
+from random import shuffle
 
 def clear_screen():
     os.system('clear')
 
+def prompt_valid_input(valid_inputs, message=''):
+    print(f'{message}Please choose: {valid_inputs}: ')
+
+    while True:
+        choice = input().lower()
+        if choice in valid_inputs:
+            break
+ 
+        print(f"That's not a valid input. Please choose from {valid_inputs}.")
+
+    return choice
+
 class Card:
-    ACE_VALUE  = 11
-    FACE_VALUE = 10
     SUITS = ['Clubs', 'Diamonds', 'Hearts', 'Spades']
     RANKS = [str(num) for num in range(2, 11)] + ['J', 'Q', 'K', 'A']
 
@@ -21,9 +31,9 @@ class Card:
 
         except ValueError:
             if self.rank == 'A':
-                return self.ACE_VALUE
+                return TwentyOneGame.ACE_VALUE
 
-            return self.FACE_VALUE
+            return TwentyOneGame.FACE_VALUE
 
     def hide_card(self):
         self.hidden = True
@@ -34,7 +44,7 @@ class Card:
     def is_hidden(self):
         return self.hidden
     
-    def return_ascii(self):
+    def get_card_ascii(self):
         if self.is_hidden():
             line_1 = ' _______ '
             line_2 = '|_______| '
@@ -95,28 +105,33 @@ class Deck:
     def shuffle_deck(self):
         shuffle(self.cards)
     
-    def deal(self):
-        return [self.cards.pop() for _ in range(TwentyOneGame.HAND_SIZE)]
-
-    def hit(self):
-        return [self.cards.pop()]
+    def deal_cards(self, num_cards):
+        return [self.cards.pop() for _ in range(num_cards)]
 
 class Participant:
+    VALID_CHOICES = ['h', 's']
+
     def __init__(self, role, money=0):
         self.hand = []
         self.role = role
         self.money = money
-        self.TARGET = 10
+        self.TARGET_CASH = 10
+
+    def get_money(self):
+        return self.money
+
+    def get_role(self):
+        return self.role
 
     def is_out_of_money(self):
         return self.money == 0
-    
+
     def is_rich(self):
-        return self.money > self.TARGET
-    
+        return self.money > self.TARGET_CASH
+
     def is_busted(self):
         return self.get_score() > 21
-    
+
     def get_score(self):
         total = sum([card.get_value() for card in self.hand])
         ranks = [card.rank for card in self.hand]
@@ -134,30 +149,29 @@ class Participant:
         return self.role
 
 class TwentyOneGame:
+    ACE_VALUE  = 11
+    FACE_VALUE = 10
     HAND_SIZE = 2
+    WINNING_SCORE = 21
+    DEALER_MAX = 17
+    DEALER_HIDDEN_CARD_IDX = 1
+    STAY = 's'
+    HIT = 'h'
 
     def __init__(self, player, dealer):
         self.deck = Deck()
         self.player = player
         self.dealer = dealer
 
-    def start(self):
-        self.deal_cards()
-        self.show_cards()
-        self.player_turn()
-        self.dealer_turn()
-        self.display_result()
-        self.adjust_money()
-
-    def deal_cards(self):
-        self.player.hand = self.deck.deal()
-        self.dealer.hand = self.deck.deal()
-        self.dealer.hand[1].hide_card()
+    def deal_hands(self):
+        self.player.hand = self.deck.deal_cards(TwentyOneGame.HAND_SIZE)
+        self.dealer.hand = self.deck.deal_cards(TwentyOneGame.HAND_SIZE)
+        self.dealer.hand[self.DEALER_HIDDEN_CARD_IDX].hide_card()
 
     def show_hand(self, player):
         card_art = []
         for card in player.hand:
-            card_art += [card.return_ascii()]
+            card_art += [card.get_card_ascii()]
 
         print(f"{player}'s cards:" if not player.is_busted() 
                                    else f"{player} busts!")
@@ -170,62 +184,54 @@ class TwentyOneGame:
             print(line)
 
     def show_cards(self):
-        print('Here are the current hands:')
-        print()
-        self.show_hand(self.player)
-        print()
-        self.show_hand(self.dealer)
-        print()
-
-    def show_cards_w_dealer(self):
-        print("Here are the final hands: ")
+        print('Here are the hands:')
         print()
         self.show_hand(self.player)
         print()
         self.show_hand(self.dealer)
         print()
     
-    def player_turn(self):
-        while self.player.get_score() < 21:
-            print(f'|| Player score: {self.player.get_score()} || '
-                  f'|| Player bank: ${self.player.money} ||')
+    def display_player_score(self):
+        print(f'|| Player score: {self.player.get_score()} '
+              f'|| Player cash: ${self.player.get_money()} ||')
+        print()
+
+    def display_result(self):
+        if not self.is_tied():
+            winner, loser = self.get_winner_and_loser()
+
+            print(f'|| {winner.get_role()} wins. Score: {winner.get_score()} '
+                  f'|| {loser.get_role()} loses. Score: {loser.get_score()} ||')
             print()
-            print('Would you like to hit or stay?: ')
-            
-            while True:
-                choice = input().lower()
-                if choice in ['hit', 'stay']:
-                    break
+        else:
+            print(f'|| {self.player} ties. Score: {self.player.get_score()} || '
+                  f'{self.dealer} ties. Score: {self.dealer.get_score()} ||')
+            print()
+    
+    def player_turn(self):
+        while self.player.get_score() < self.WINNING_SCORE:
+            self.display_player_score()
+            choice = prompt_valid_input(Participant.VALID_CHOICES)
 
-                print("That's not a valid input. Please type 'hit' or 'stay'.")
-
-            if choice == 'stay':
-                print()
-                print("You have chosen to stay. Dealer's turn.")
-                print()
+            if choice == self.STAY:
                 break
 
-            self.player.hand += self.deck.hit()
+            self.player.hand += self.deck.deal_cards(1)
 
             clear_screen()
             self.show_cards()
 
     def dealer_turn(self):
         self.dealer.hand[1].reveal_card()
-        while self.dealer.get_score() < 17 and not self.player.is_busted():
-            self.dealer.hand += self.deck.hit()
-            print('Dealer hits!')
-            print()
-            self.show_hand(self.dealer)
-            print()
-            
-            print(f'Player score: {self.player.get_score()}  '  
-                  f'Dealer score: {self.dealer.get_score()}')
-            print()
+        while self.dealer.get_score() < self.DEALER_MAX and not self.player.is_busted():
+            clear_screen()
+            self.dealer.hand += self.deck.deal_cards(1)
 
-            if self.dealer.is_busted():
-                print('Dealer is bust!')
-                print()
+            if self.dealer.get_score() >= self.DEALER_MAX:
+                break
+
+            self.show_cards()
+            input(f'|| Dealer score: {self.dealer.get_score()} || Press [enter] to continue...')
 
         clear_screen()
         self.show_cards()
@@ -253,53 +259,46 @@ class TwentyOneGame:
         return winner, loser
     
     def adjust_money(self):
-        
         if not self.is_tied():
-            winner = self.get_winner_and_loser()[0]
+            winner, loser = self.get_winner_and_loser()
 
             if winner is self.player:
                 self.player.money += 1
             else:
                 self.player.money -= 1
-        
-            print(f"Player now has ${self.player.money}")
-            print()
 
-    def display_result(self):
-        if not self.is_tied():
-            winner, loser = self.get_winner_and_loser()
-            
-            print(f'|| {winner.role} wins. Score: {winner.get_score()} || '
-                  f'{loser.role} loses. Score: {loser.get_score()} ||')
-            print()
-        else:
-            print(f'|| {self.player} ties. Score: {self.player.get_score()} || '
-                  f'{self.dealer.role} ties. Score: {self.dealer.get_score()} ||')
-            print()
+    def start_game(self):
+        self.deal_hands()
+        self.show_cards()
+        self.player_turn()
+        self.dealer_turn()
+        self.display_result()
+        self.adjust_money()
 
 class TwentyOneSeries():
+    PLAY_AGAIN_CHOICES = ['y', 'n']
+
     def __init__(self):
         self.player = Participant('Player', 5)
         self.dealer = Participant('Dealer')
     
-    def series(self):
+    def play_again(self):
+        play_again_message = f'You still have ${self.player.money}! Play again? '
+        user_choice = prompt_valid_input(self.PLAY_AGAIN_CHOICES, 
+                                      play_again_message)
+
+        return False if user_choice == 'n' else True
+
+    def start_series(self):
         while True:
             game = TwentyOneGame(self.player, self.dealer)
-            game.start()
+            game.start_game()
 
-            if not (0 < self.player.money < 10):
+            if ((self.player.is_out_of_money() or 
+                self.player.is_rich()) or
+                not self.play_again()):
                 break
 
-            print('Would you like to play again?')
-            user_choice = input().lower()
-
-            while user_choice not in ['y', 'yes', 'n', 'no']:
-                print("That's not a valid input. Please choose 'yes' or 'no'.")
-                user_choice = input()
-
-            if user_choice[0] == 'n':
-                break
-            
             clear_screen()
 
     def display_goodbye_message(self):
@@ -307,7 +306,7 @@ class TwentyOneSeries():
         if self.player.is_rich():
             print("You're too rich, time to end the game!")
         elif self.player.is_out_of_money():
-            print("Uh oh...you're out of cash")
+            print("Uh oh...you're out of cash!")
         else:
             print(f'Player ends with ${self.player.money}')
 
@@ -323,15 +322,15 @@ class TwentyOneSeries():
         print(f'Welcome to 21! Player starts with ${self.player.money}')
         print()
     
-    def start_series(self):
+    def prompt_confirmation(self):
         print('Press [enter] to start the series')
         input()
         clear_screen()
 
     def play_series(self):
         self.display_welcome_message()
+        self.prompt_confirmation()
         self.start_series()
-        self.series()
         self.display_goodbye_message()
 
 series = TwentyOneSeries()
