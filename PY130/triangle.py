@@ -56,18 +56,17 @@ Otherwise:
 class Triangle:
     def __init__(self, *sides):
         self.sides = sorted(list(sides))
-        self._validate_sides()
+        if not self._validate_sides():
+            raise ValueError('Invalid side lengths')
 
     def _validate_sides(self):
-        for side in self.sides:
-            if side <= 0:
-                raise ValueError
-        
-        if sum(self.sides[:2]) <= self.sides[2]:
-            raise ValueError
+        return(
+            all(side > 0 for side in self.sides) and
+            sum(self.sides[:2]) > self.sides[2]
+        )
 
     def _is_equilateral(self):
-        return self.sides[0] == self.sides[2]
+        return len(set(self.sides)) == 1
     
     def _is_scalene(self):
         return len(set(self.sides)) != 2
