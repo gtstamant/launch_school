@@ -83,8 +83,3 @@ class RomanNumeral:
                 roman_numeral += (value * numeral)
         
         return roman_numeral
-
-
-
-num = RomanNumeral(1120)
-print(num.to_roman())
