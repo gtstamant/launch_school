@@ -2,10 +2,13 @@ class Car:
     def __init__(self):
         self._wheels = 4
         self._name = None
-    
+
     def __eq__(self, other):
-        return isinstance(other, Car) and self.name == other.name
-    
+        if not isinstance(other, Car):
+            return NotImplemented
+        
+        return self.name == other.name
+
     @property
     def wheels(self):
         return self._wheels
@@ -17,6 +20,6 @@ class Car:
     @name.setter
     def name(self, value):
         if not isinstance(value, str):
-            raise ValueError('Name must be a string')
+            raise ValueError('Name must be a string.')
         
         self._name = value
