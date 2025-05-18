@@ -47,7 +47,7 @@ class Clock:
 
     @classmethod
     def at(cls, hours, minutes=0):
-        return Clock(hours, minutes)
+        return cls(hours, minutes)
 
     def __str__(self):
         return f'{self.hours:02d}:{self.minutes:02d}'
@@ -77,3 +77,6 @@ class Clock:
             return NotImplemented
 
         return str(self) != str(other)       
+
+clock = Clock.at(10, 30)
+print(clock - 1000)
