@@ -49,7 +49,7 @@ for letters up to letter
   otherwise append left pad + letter + center pad + letter + right pad
   left pad - 1
   right pad - 1
-  center pad + 1
+  center pad + (2n - 1)
 
 copy all but the last member of strings
 reverse it and append it to strings
