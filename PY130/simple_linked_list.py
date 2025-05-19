@@ -28,9 +28,9 @@ Linked list:
 
 """
 class Element:
-    def __init__(self, datum, next=None):
+    def __init__(self, datum, next_element=None):
         self._datum = datum
-        self._next = next
+        self._next = next_element
     
     @property
     def datum(self):
@@ -74,7 +74,8 @@ class SimpleLinkedList:
     
     def pop(self):
         popped = self.peek()
-        self._head = self.head.next
+        if self._head:
+            self._head = self.head.next
 
         return popped
 
