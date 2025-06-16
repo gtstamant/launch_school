@@ -16,13 +16,14 @@ n times
 actually can do this much more easily without regex
 
 """
+print('testing')
 
 class Anagram:
     def __init__(self, word):
         self.word = word
 
     def match(self, list):
-        return [word for word in list 
+        return [word for word in list
                 if sorted(word.casefold()) == sorted(self.word.casefold())
                 if word.casefold() != self.word.casefold()]
 
