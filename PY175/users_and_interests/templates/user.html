@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>{{ user }}</h1>
+<p>email: {{ email }}</p>
+<p>interests:
+    {% for interest in interests %}
+      {% if loop.index == (interests | length) %}
+        {{ interest }}
+      {% else %}
+        {{ interest}},
+      {% endif %}
+    {% endfor %}
+</p>
+<ul>
+  {% for person in user_names %}
+    {% if not person == user %}
+    <a href="{{ url_for('users', user=person) }}"><li>{{ person }}</li></a>
+    {% endif %}
+  {% endfor %}
+</ul>
+{% endblock %}

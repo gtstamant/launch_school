@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+
+<html>
+  <body>
+    <div id="content">
+      {% block content %}{% endblock %}
+    </div>
+    <div id="menu">
+      <p>There are {{ user_names | length }} users with a total of {{ data | total_interests }} interests.</p>
+    </div>
+  </body>
+
+</html>
