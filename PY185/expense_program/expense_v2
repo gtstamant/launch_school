@@ -1,0 +1,173 @@
+#!/usr/bin/env python
+from datetime import date
+from textwrap import dedent
+import sys
+
+import psycopg2
+from psycopg2 import extras
+
+from contextlib import contextmanager
+
+class ExpenseData:
+    def __init__(self):
+        self._setup_schema()
+
+    @contextmanager
+    def _database_connect(self):
+        connection = psycopg2.connect(dbname="expenses")
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
+
+    def _setup_schema(self):
+        with self._database_connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT count(*) FROM information_schema.tables
+                                   WHERE table_schema = 'public'
+                                     AND table_name = 'expenses'
+                    """)
+
+                result = cursor.fetchone()
+                if result[0] == 0:
+                    cursor.execute("""
+                        CREATE TABLE expenses (
+                               id serial PRIMARY KEY,
+                               amount numeric(6, 2) NOT NULL CHECK (amount >= 0.01),
+                               memo text NOT NULL,
+                               created_on DATE NOT NULL)
+                    """)
+
+    def _display_expenses(self, expenses):
+        for expense in expenses:
+            columns = [
+                str(expense["id"]).rjust(3),
+                str(expense["created_on"]),
+                str(expense["amount"]).rjust(12),
+                str(expense["memo"]),
+            ]
+            print(" | ".join(columns))
+
+    def _display_count(self, count):
+        if count == 0:
+            print("There are no expenses.")
+        elif count == 1:
+            print("There is 1 expense.")
+        else:
+            print(f"There are {count} expenses.")
+
+    def _display_total(self, expenses):
+        amount_sum = sum([expense["amount"] for expense in expenses])
+        print("-" * 50)
+        print(f"Total {str(round(amount_sum, 2)).rjust(25)}")
+
+    def list_expenses(self):
+        with self._database_connect() as connection:
+            with connection.cursor(cursor_factory=extras.DictCursor ) as cursor:
+                cursor.execute("SELECT * FROM expenses ORDER BY created_on ASC")
+                result = cursor.fetchall()
+
+        self._display_count(len(result))
+        self._display_expenses(result)
+        if len(result) > 1:
+            self._display_total(result)
+
+    def add_expense(self, amount, memo):
+        with self._database_connect() as connection:
+            with connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute(f"""INSERT INTO expenses
+                                         (amount, memo, created_on)
+                              VALUES (%s, %s, %s)
+                               """,
+                               (amount, memo, date.today()))
+
+    def search_expenses(self, term):
+        with self._database_connect() as connection:
+            with connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute(f"SELECT * FROM expenses WHERE memo ILIKE %s",
+                               (f'%{term}%',))
+                result = cursor.fetchall()
+
+        self._display_count(len(result))
+        self._display_expenses(result)
+        if len(result) > 1:
+            self._display_total(result)
+
+    def delete_expense(self, id):
+        with self._database_connect() as connection:
+            with connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute(f"SELECT * FROM expenses WHERE id = %s", (id,))
+
+                result = cursor.fetchone()
+                if not result:
+                    print(f"There is no expense with id '{id}'.")
+                    return
+
+                cursor.execute(f"DELETE FROM expenses WHERE id = %s", (id,))
+                print("The following expense has been deleted:")
+                self._display_expenses([result])
+
+    def clear_expenses(self):
+        with self._database_connect() as connection:
+            with connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute("DELETE FROM expenses")
+
+        print('All expenses have been deleted.')
+
+class CLI:
+    def __init__(self):
+        self.application = ExpenseData()
+
+    @staticmethod
+    def display_help(self):
+        print(dedent("""
+            An expense recording system
+
+            Commands:
+
+            add AMOUNT MEMO [DATE] - record a new expense
+            clear - delete all expenses
+            list - list all expenses
+            delete NUMBER - remove expense with id NUMBER
+            search QUERY - list expenses with a matching memo field
+            """).strip("\n"))
+
+    def run(self, args):
+        if not args:
+            command = None
+        else:
+            command = args.pop(0)
+
+        match command:
+            case "list":
+                self.application.list_expenses()
+            case "add":
+                if len(args) < 2:
+                    print('You must provide an amount and memo.')
+                    return
+                amount, memo = args
+                self.application.add_expense(amount, memo)
+            case "search":
+                if len(args) < 1:
+                    print("You must provide a search query.")
+                    return
+                self.application.search_expenses(args[0])
+            case "delete":
+                if len(args) < 1:
+                    print("You must provide an expense ID.")
+                    return
+                self.application.delete_expense(args[0])
+            case "clear":
+                print("This will remove all expenses. Are you sure? (y/n)")
+                response = input().strip()
+                if response.lower != 'y':
+                    return
+                self.application.clear_expenses()
+            case _:
+                CLI.display_help()
+
+if __name__ == "__main__":
+    cli = CLI()
+    cli.run(sys.argv[1:])
